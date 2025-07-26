@@ -113,7 +113,7 @@ public abstract class AutomationGatewayBase : IDisposable
         => _commandSender.SendOutboundCommand(taskId, targetLocation, gateNumber, direction);
 
     /// <summary>
-    /// Gửi danh sách bao gồm nhiều lệnh di chuyển.
+    /// Gửi danh sách bao gồm nhiều lệnh.
     /// </summary>
     /// <param name="tasks">Danh sách lệnh di chuyển.</param>
     /// <exception cref="ArgumentException">Ném ra nếu tasks là null, rỗng hoặc chứa lệnh với taskId null/rỗng.</exception>
@@ -186,19 +186,19 @@ public abstract class AutomationGatewayBase : IDisposable
         => _commandSender.RemoveTasks(taskIds);
 
     /// <summary>
-    /// Tạm dừng queue
+    /// Tạm dừng chạy lệnh (các lệnh đang chạy vẫn tiếp tục đến khi hoàn thành)
     /// </summary>
     public void PauseQueue()
         => _commandSender.Pause();
 
     /// <summary>
-    /// Mở lại queue
+    /// Tiếp tục chạy lệnh có trong hàng chờ
     /// </summary>
     public void ResumeQueue()
         => _commandSender.Resume();
 
     /// <summary>
-    /// Kiểm tra queue có đang đóng không
+    /// Kiểm tra queue có đang tạm dừng không
     /// </summary>
     public bool IsPauseQueue
         => _commandSender.IsPauseQueue;

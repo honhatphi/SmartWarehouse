@@ -87,17 +87,17 @@ Lấy trạng thái hiện tại của thiết bị.
 
 ### `Task SendInboundCommand(string taskId)`
 
-Gửi lệnh nhập kho đến thiết bị hoặc tất cả thiết bị hỗ trợ nhập kho và đang rảnh.
+Gửi lệnh nhập kho
 
 - **Parameters:**
-  - `taskId`: ID của nhiệm vụ nhập kho.
+  - `taskId`: ID của lệnh nhập kho.
 
 - **Exceptions:**
   - `ArgumentException`: Ném ra nếu `taskId` là null hoặc rỗng.
 
 ### `Task SendOutboundCommand(string taskId, Location targetLocation, short gateNumber, Direction direction)`
 
-Gửi lệnh xuất kho đến thiết bị cụ thể, kèm theo thông tin vị trí, cửa và hướng xuất.
+Gửi lệnh xuất kho
 
 - **Parameters:**
   - `taskId`: ID của nhiệm vụ xuất kho.
@@ -111,10 +111,10 @@ Gửi lệnh xuất kho đến thiết bị cụ thể, kèm theo thông tin v�
 
 ### `Task SendMultipleCommands(List<TransportTask> tasks)`
 
-Gửi danh sách lệnh xuất kho đến thiết bị cụ thể hoặc phân phối đến các thiết bị đang rảnh.
+ Gửi danh sách bao gồm nhiều lệnh.
 
 - **Parameters:**
-  - `tasks`: Danh sách nhiệm vụ xuất kho (`TransportTask` chứa `taskId`, `sourceLocation` (chuyển), `targetLocation`, `gateNumber`, `inDirBlock` (chuyển), `outDirBlock`).
+  - `tasks`: Danh sách lệnh.
 
 - **Exceptions:**
   - `ArgumentException`: Ném ra nếu `tasks` là null, rỗng hoặc chứa nhiệm vụ với `taskId` null/rỗng.
@@ -122,10 +122,9 @@ Gửi danh sách lệnh xuất kho đến thiết bị cụ thể hoặc phân p
 
 ### `Task SendTransferCommand(string taskId, Location sourceLocation, Location targetLocation, short gateNumber, Direction inDirBlock, Direction outDirBlock)`
 
-Gửi lệnh chuyển kho giữa hai vị trí trên thiết bị cụ thể.
-
+Gửi lệnh chuyển vị trí
 - **Parameters:**
-  - `taskId`: ID của nhiệm vụ chuyển kho.
+  - `taskId`: ID của lệnh chuyển kho.
   - `sourceLocation`: Vị trí nguồn của pallet.
   - `targetLocation`: Vị trí đích của pallet.
   - `gateNumber`: Số cửa xuất/nhập kho.
@@ -150,31 +149,31 @@ Gửi kết quả xác thực mã vạch đến thiết bị.
 
 ### `async Task<List<DeviceInfo>> GetIdleDevicesAsync()`
 
-Lấy danh sách các thiết bị đang ở trạng thái rảnh cùng với vị trí hiện tại của chúng.
+Lấy danh sách các shuttle đang ở trạng thái rảnh cùng với vị trí hiện tại của chúng.
 
-- **Returns:** Danh sách các thiết bị rảnh và vị trí hiện tại (`DeviceInfo`).
+- **Returns:** Danh sách các shuttle rảnh và vị trí hiện tại.
 
 ### `async Task<Location?> GetActualLocationAsync(string deviceId)`
 
-Lấy vị trí hiện tại của thiết bị.
+Lấy vị trí hiện tại của shuttle.
 
 - **Parameters:**
-  - `deviceId`: ID của thiết bị cần lấy vị trí.
+  - `deviceId`: ID của shuttle cần lấy vị trí.
 
-- **Returns:** Vị trí hiện tại (`Location`) hoặc null nếu không thể lấy hoặc thiết bị không rảnh.
+- **Returns:** Vị trí hiện tại (`Location`) hoặc null nếu shuttle đang không hoạt động.
 
 ### `TransportTask[] GetPendingTask()`
 
-Danh sách các nhiệm vụ (lệnh) đang chờ xử lý trong hàng đợi của `CommandSender`.
+Danh sách các lệnh đang chờ xử lý trong hàng đợi.
 
-- **Returns:** Danh sách nhiệm vụ.
+- **Returns:** Danh sách lệnh.
 
 ### `void RemoveTransportTasks(IEnumerable<string> taskIds)`
 
-Loại bỏ một hoặc nhiều nhiệm vụ (lệnh) khỏi hàng đợi.
+Loại bỏ một hoặc nhiều khỏi hàng đợi.
 
 - **Parameters:**
-  - `taskIds`: Danh sách ID tác vụ cần loại bỏ.
+  - `taskIds`: Danh sách ID lệnh cần loại bỏ.
 
 ### `void PauseQueue()`
 Tạm dừng chạy lệnh (các lệnh đang chạy vẫn tiếp tục đến khi hoàn thành)
