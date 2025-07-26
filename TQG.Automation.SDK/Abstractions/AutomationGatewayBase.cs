@@ -28,12 +28,12 @@ public abstract class AutomationGatewayBase : IDisposable
     public event EventHandler<BarcodeReceivedEventArgs>? BarcodeReceived;
 
     /// <summary>
-    /// Sự kiện kích hoạt khi nhiệm vụ hoàn thành thành công.
+    /// Sự kiện kích hoạt khi lệnh hoàn thành thành công.
     /// </summary>
     public event EventHandler<TaskSucceededEventArgs>? TaskSucceeded;
 
     /// <summary>
-    /// Sự kiện kích hoạt khi nhiệm vụ thất bại.
+    /// Sự kiện kích hoạt khi lệnh thất bại.
     /// </summary>
     public event EventHandler<TaskFailedEventArgs>? TaskFailed;
 
@@ -93,17 +93,17 @@ public abstract class AutomationGatewayBase : IDisposable
     public DeviceStatus GetDeviceStatus(string deviceId) => _deviceMonitor.GetDeviceStatus(deviceId);
 
     /// <summary>
-    /// Gửi lệnh nhập kho đến thiết bị hoặc tất cả thiết bị hỗ trợ nhập kho và đang rảnh.
+    /// Gửi lệnh nhập kho
     /// </summary>
-    /// <param name="taskId">ID của nhiệm vụ nhập kho.</param>
+    /// <param name="taskId">ID của lệnh nhập kho.</param>
     /// <exception cref="ArgumentException">Ném ra nếu taskId là null hoặc rỗng.</exception>
     public Task SendInboundCommand(string taskId)
         => _commandSender.SendInboundCommand(taskId);
 
     /// <summary>
-    /// Gửi lệnh xuất kho đến thiết bị cụ thể, kèm theo thông tin vị trí, cửa và hướng xuất.
+    /// Gửi lệnh xuất kho
     /// </summary>
-    /// <param name="taskId">ID của nhiệm vụ xuất kho.</param>
+    /// <param name="taskId">ID của lệnh xuất kho.</param>
     /// <param name="targetLocation">Vị trí mục tiêu xuất kho.</param>
     /// <param name="gateNumber">Số cửa xuất kho.</param>
     /// <param name="direction">Hướng xuất khỏi block (block có 2 hướng vào vd: block 3).</param>
@@ -113,18 +113,18 @@ public abstract class AutomationGatewayBase : IDisposable
         => _commandSender.SendOutboundCommand(taskId, targetLocation, gateNumber, direction);
 
     /// <summary>
-    /// Gửi danh sách lệnh xuất kho đến thiết bị cụ thể hoặc phân phối đến các thiết bị đang rảnh.
+    /// Gửi danh sách bao gồm nhiều lệnh di chuyển.
     /// </summary>
-    /// <param name="tasks">Danh sách nhiệm vụ xuất kho (OutboundTask chứa taskId, sourceLocation (chuyển), targetLocation, gateNumber, inDirBlock (chuyển), outDirBlock).</param>
-    /// <exception cref="ArgumentException">Ném ra nếu tasks là null, rỗng hoặc chứa nhiệm vụ với taskId null/rỗng.</exception>
-    /// <exception cref="ArgumentNullException">Ném ra nếu bất kỳ nhiệm vụ nào có targetLocation null.</exception>
+    /// <param name="tasks">Danh sách lệnh di chuyển.</param>
+    /// <exception cref="ArgumentException">Ném ra nếu tasks là null, rỗng hoặc chứa lệnh với taskId null/rỗng.</exception>
+    /// <exception cref="ArgumentNullException">Ném ra nếu bất kỳ lệnh nào có targetLocation null.</exception>
     public Task SendMultipleCommands(List<TransportTask> tasks)
         => _commandSender.SendMultipleCommands(tasks);
 
     /// <summary>
-    /// Gửi lệnh chuyển kho giữa hai vị trí trên thiết bị cụ thể.
+    /// Gửi lệnh chuyển vị trí
     /// </summary>
-    /// <param name="taskId">ID của nhiệm vụ chuyển kho.</param>
+    /// <param name="taskId">ID của lệnh chuyển vị trí.</param>
     /// <param name="sourceLocation">Vị trí nguồn của hàng hóa.</param>
     /// <param name="targetLocation">Vị trí đích của hàng hóa.</param>
     /// <param name="gateNumber">Số cửa xuất/nhập kho.</param>
@@ -145,7 +145,7 @@ public abstract class AutomationGatewayBase : IDisposable
     /// Gửi kết quả xác thực mã vạch đến thiết bị.
     /// </summary>
     /// <param name="deviceId">ID của thiết bị cần gửi kết quả.</param>
-    /// <param name="taskId">ID của nhiệm vụ liên quan.</param>
+    /// <param name="taskId">ID của lệnh liên quan.</param>
     /// <param name="isValid">Kết quả xác thực mã vạch (true nếu hợp lệ).</param>
     /// <param name="targetLocation">Vị trí mục tiêu (tùy chọn, cần nếu hợp lệ).</param>
     /// <param name="direction">Hướng vào block (block có 2 hướng vào vd: block 3).</param>
@@ -160,28 +160,28 @@ public abstract class AutomationGatewayBase : IDisposable
         => await _barcodeHandler.SendValidationResult(deviceId, taskId, isValid, targetLocation, direction, gateNumber);
 
     /// <summary>
-    /// Lấy danh sách các thiết bị đang ở trạng thái rảnh cùng với vị trí hiện tại của chúng.
+    /// Lấy danh sách các shuttle đang ở trạng thái rảnh cùng với vị trí hiện tại của chúng.
     /// </summary>
-    /// <returns>Danh sách các thiết bị rảnh và vị trí hiện tại (DeviceInfo).</returns>
+    /// <returns>Danh sách các shuttle rảnh và vị trí hiện tại.</returns>
     public async Task<List<DeviceInfo>> GetIdleDevicesAsync() => await _deviceMonitor.GetIdleDevicesAsync();
 
     /// <summary>
-    /// Lấy vị trí hiện tại của thiết bị.
+    /// Lấy vị trí hiện tại của shuttle.
     /// </summary>
-    /// <param name="deviceId">ID của thiết bị cần lấy vị trí.</param>
-    /// <returns>Vị trí hiện tại (Location) hoặc null nếu không thể lấy hoặc thiết bị không rảnh.</returns>
+    /// <param name="deviceId">ID của shuttle cần lấy vị trí.</param>
+    /// <returns>Vị trí hiện tại (Location) hoặc null nếu shuttle đang không hoạt động.</returns>
     public async Task<Location?> GetActualLocationAsync(string deviceId) => await _barcodeHandler.GetActualLocationAsync(deviceId);
 
     /// <summary>
-    /// Danh sách các nhiệm vụ đang chờ xử lý trong hàng đợi của CommandSender.
+    /// Danh sách các lệnh đang chờ xử lý trong hàng đợi.
     /// </summary>
-    /// <returns>Danh sách nhiệm vụ</returns>
+    /// <returns>Danh sách lệnh</returns>
     public TransportTask[] GetPendingTask() => _commandSender.GetQueuedTasks();
 
     /// <summary>
-    /// Loại bỏ một hoặc nhiều tác vụ khỏi hàng đợi.
+    /// Loại bỏ một hoặc nhiều lệnh khỏi hàng đợi.
     /// </summary>
-    /// <param name="taskIds">Danh sách tác vụ</param>
+    /// <param name="taskIds">Danh sách lệnh</param>
     public void RemoveTransportTasks(IEnumerable<string> taskIds)
         => _commandSender.RemoveTasks(taskIds);
 
