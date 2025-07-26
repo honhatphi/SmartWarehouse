@@ -373,6 +373,7 @@ internal sealed class CommandSender : IDisposable
         private readonly CancellationTokenSource _cts = new();
         private static readonly Location _gateLocation = new(1, 14, 5);  // Fixed gate location for Inbound tasks
         private volatile bool _isPaused = false;
+        private volatile int _roundRobinIndex = 0;
 
         public void Pause()
         {
@@ -467,12 +468,39 @@ internal sealed class CommandSender : IDisposable
             }
         }
 
+        /// <summary>
+        /// Lấy DeviceProfile phù hợp nhất cho một TransportTask từ danh sách các thiết bị idle. (Áp dụng cân bằng tải)
+        /// 
+        /// Hàm này áp dụng chiến lược kết hợp giữa sắp xếp dựa trên khoảng cách (distance-based sorting) và 
+        /// lựa chọn luân phiên theo kiểu round-robin để đảm bảo load balancing tốt hơn giữa các thiết bị.
+        /// 
+        /// - Đầu tiên, lọc và sắp xếp các thiết bị idle theo khoảng cách gần nhất đến vị trí tham chiếu của task 
+        ///   (ví dụ: gate cho Inbound hoặc source location cho Outbound), để ưu tiên hiệu quả di chuyển.
+        /// - Sau đó, sử dụng chỉ số round-robin (_roundRobinIndex) để chọn luân phiên từ danh sách đã sắp xếp, 
+        ///   tránh tình trạng luôn chọn thiết bị gần nhất dẫn đến overload (quá tải) cho một số thiết bị cụ thể, 
+        ///   đồng thời đảm bảo tính công bằng (fairness) trong phân phối task giữa các thiết bị idle.
+        /// 
+        /// Vấn đề giải quyết: Tránh bias (thiên vị) về thiết bị gần nhất, giúp phân tải đều hơn, giảm thời gian chờ 
+        /// và tăng hiệu suất tổng thể hệ thống khi có nhiều task và thiết bị.
+        /// 
+        /// Nếu không có thiết bị phù hợp, trả về null.
+        /// </summary>
+        /// <param name="idleDevices">Danh sách các thiết bị đang idle (rảnh rỗi).</param>
+        /// <param name="task">TransportTask cần assign.</param>
+        /// <returns>DeviceProfile của thiết bị được chọn, hoặc null nếu không có.</returns>
         private DeviceProfile? GetSuitableDeviceProfile(List<DeviceInfo> idleDevices, TransportTask task)
-            => idleDevices
-            .Where(device => _deviceProfile.TryGetValue(device.DeviceId, out var p) && !_assigningDevices.ContainsKey(device.DeviceId))
-            .OrderBy(device => CalculateDistance(device.Location, GetReferenceLocationForTask(task)))
-            .Select(device => _deviceProfile[device.DeviceId])
-            .FirstOrDefault();
+        {
+            var candidates = idleDevices
+                .Where(device => _deviceProfile.TryGetValue(device.DeviceId, out var p) && !_assigningDevices.ContainsKey(device.DeviceId))
+                .OrderBy(device => CalculateDistance(device.Location, GetReferenceLocationForTask(task)))  // Vẫn sort distance trước
+                .ToList();
+
+            if (candidates.Count == 0) return null;
+
+            int index = Interlocked.Increment(ref _roundRobinIndex) % candidates.Count;
+            var selectedDevice = candidates[index];
+            return _deviceProfile[selectedDevice.DeviceId];
+        }
 
         private static Location GetReferenceLocationForTask(TransportTask task)
             => task.CommandType switch
@@ -493,7 +521,7 @@ internal sealed class CommandSender : IDisposable
             {
                 PlcConnector connector = await _sender._deviceMonitor.GetConnectorAsync(profile.Id);
 
-                await TriggerCommandAsync(deviceId, connector, profile.Signals, task);
+                await TriggerCommandAsync(connector, profile.Signals, task);
 
                 CancellationTokenSource pollingCts = new();
                 Task pollTask = StartPollingTask(task, deviceId, connector, profile, pollingCts.Token);
@@ -505,16 +533,22 @@ internal sealed class CommandSender : IDisposable
             catch (DeviceNotRegisteredException)
             {
                 _sender.TaskFailed?.Invoke(this, new TaskFailedEventArgs(deviceId, task.TaskId, ErrorDetail.DeviceNotRegistered(deviceId)));
+
+                _sender.Pause();
+
                 return;
             }
             catch (Exception ex)
             {
                 _assigningDevices.TryRemove(deviceId, out _);
                 _sender.TaskFailed?.Invoke(_sender, new TaskFailedEventArgs(deviceId, task.TaskId, ErrorDetail.TransportTaskAssignmentFailure(deviceId, task.TaskId, ex)));
+
+                _sender.Pause();
+            
             }
         }
 
-        private async Task TriggerCommandAsync(string deviceId, PlcConnector connector, SignalMap signals, TransportTask task)
+        private static async Task TriggerCommandAsync(PlcConnector connector, SignalMap signals, TransportTask task)
         {
             await (task.CommandType switch
             {
