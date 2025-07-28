@@ -76,7 +76,12 @@ public abstract class AutomationGatewayBase : IDisposable
     /// </summary>
     /// <param name="deviceId">ID của thiết bị cần hủy kích hoạt.</param>
     /// <exception cref="DeviceNotRegisteredException">Ném ra nếu thiết bị không tồn tại.</exception>
-    public void DeactivateDevice(string deviceId) => _deviceMonitor.StopMonitoring(deviceId);
+    public void DeactivateDevice(string deviceId)
+    {
+        _deviceMonitor.StopMonitoring(deviceId);
+
+        Dispose();
+    }
 
     /// <summary>
     /// Kiểm tra trạng thái kết nối của thiết bị.
@@ -182,8 +187,17 @@ public abstract class AutomationGatewayBase : IDisposable
     /// Loại bỏ một hoặc nhiều lệnh khỏi hàng đợi.
     /// </summary>
     /// <param name="taskIds">Danh sách lệnh</param>
-    public void RemoveTransportTasks(IEnumerable<string> taskIds)
+    /// <returns>False nếu list trống hoặc chưa dừng (IsPauseQueue = False), True nếu return thành công.</returns>
+    public bool RemoveTransportTasks(IEnumerable<string> taskIds)
         => _commandSender.RemoveTasks(taskIds);
+
+    /// <summary>
+    /// Lấy TaskId đang thực hiện
+    /// </summary>
+    /// <param name="deviceId">Id của shuttle.</param>
+    /// <returns>TaskId hoặc null</returns>
+    public string? GetCurrentTask(string deviceId) => _commandSender.GetCurrentTask(deviceId);
+
 
     /// <summary>
     /// Tạm dừng chạy lệnh (các lệnh đang chạy vẫn tiếp tục đến khi hoàn thành)

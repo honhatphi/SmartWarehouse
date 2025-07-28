@@ -168,7 +168,7 @@ internal sealed class BarcodeHandler : IDisposable
         try
         {
             var deviceStatus = _monitor.GetDeviceStatus(deviceId);
-            if (deviceStatus != DeviceStatus.Idle || deviceStatus != DeviceStatus.Busy)
+            if (deviceStatus != DeviceStatus.Idle && deviceStatus != DeviceStatus.Busy)
             {
                 return null;
             }

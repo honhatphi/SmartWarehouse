@@ -313,8 +313,6 @@ internal sealed class CommandSender : IDisposable
             {
                 TaskFailed?.Invoke(this, new TaskFailedEventArgs(deviceId, taskId, ErrorDetail.RunningFailure(taskId, deviceId, errorCode)));
                 _deviceMonitor.UpdateDeviceStatus(deviceId, DeviceStatus.Error);
-                await Task.Delay(5000);
-
             }
 
             return true;
@@ -350,11 +348,14 @@ internal sealed class CommandSender : IDisposable
         }
 
         activePollTasks.Clear();
+        _taskDispatcher.Dispose();
     }
 
     public TransportTask[] GetQueuedTasks() => _taskDispatcher.GetQueuedTasks();
 
-    public void RemoveTasks(IEnumerable<string> taskIds) => _taskDispatcher.RemoveTasks(taskIds);
+    public bool RemoveTasks(IEnumerable<string> taskIds) => _taskDispatcher.RemoveTasks(taskIds);
+
+    public string? GetCurrentTask(string deviceId) => _taskDispatcher.GetCurrentTask(deviceId);
 
     public void Pause() => _taskDispatcher.Pause();
 
@@ -368,7 +369,7 @@ internal sealed class CommandSender : IDisposable
         private readonly CommandSender _sender;
 
         private readonly ConcurrentQueue<TransportTask> _taskQueue = new();
-        private readonly ConcurrentDictionary<string, bool> _assigningDevices = new();
+        private readonly ConcurrentDictionary<string, string> _assigningDevices = new();
         private readonly Task _processingTask;
         private readonly CancellationTokenSource _cts = new();
         private static readonly Location _gateLocation = new(1, 14, 5);  // Fixed gate location for Inbound tasks
@@ -449,7 +450,7 @@ internal sealed class CommandSender : IDisposable
 
             while (!_taskQueue.IsEmpty)
             {
-                if (_taskQueue.TryPeek(out var task))
+                if (_taskQueue.TryPeek(out TransportTask? task))
                 {
                     DeviceProfile? suitableProfile = GetSuitableDeviceProfile(idleDevices, task);
 
@@ -461,7 +462,7 @@ internal sealed class CommandSender : IDisposable
                     _taskQueue.TryDequeue(out _);
 
                     var deviceId = suitableProfile.Id;
-                    _assigningDevices[deviceId] = true;
+                    _assigningDevices[deviceId] = task.TaskId;
 
                     await AssignTaskToDeviceAsync(task, suitableProfile, deviceId);
                 }
@@ -544,7 +545,7 @@ internal sealed class CommandSender : IDisposable
                 _sender.TaskFailed?.Invoke(_sender, new TaskFailedEventArgs(deviceId, task.TaskId, ErrorDetail.TransportTaskAssignmentFailure(deviceId, task.TaskId, ex)));
 
                 _sender.Pause();
-            
+
             }
         }
 
@@ -583,13 +584,18 @@ internal sealed class CommandSender : IDisposable
 
         public TransportTask[] GetQueuedTasks() => [.. _taskQueue];
 
-        public void RemoveTasks(IEnumerable<string> taskIds)
+        public bool RemoveTasks(IEnumerable<string> taskIds)
         {
+            if (IsPaused || !taskIds.Any())
+            {
+                return false;
+            }
+
             var temp = new List<TransportTask>();
             var removedCount = 0;
             var taskIdSet = new HashSet<string>(taskIds);
 
-            while (_taskQueue.TryDequeue(out var task))
+            while (_taskQueue.TryDequeue(out TransportTask? task))
             {
                 if (taskIdSet.Contains(task.TaskId))
                 {
@@ -605,12 +611,23 @@ internal sealed class CommandSender : IDisposable
             {
                 _taskQueue.Enqueue(task);
             }
+
+            return removedCount > 0;
+        }
+
+        public string? GetCurrentTask(string deviceId)
+        {
+            _assigningDevices.TryGetValue(deviceId, out string? value);
+
+            return value;
         }
 
         public async void Dispose()
         {
             await _processingTask;
-
+            _assigningDevices.Clear();
+            _roundRobinIndex = 0;
+            _isPaused = false;
             _cts.Cancel();
             _cts.Dispose();
         }

@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<UseWindowsForms>true</UseWindowsForms>
+		<Nullable>enable</Nullable>
+		<_SkipUpgradeNetAnalyzersNuGetWarning>true</_SkipUpgradeNetAnalyzersNuGetWarning>
+
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="DevExpress.Win.BonusSkins" Version="24.1.3" />
+		<PackageReference Include="DevExpress.Win.Design" Version="24.1.3" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.7" />
+
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\TQG.Automation.SDK\TQG.Automation.SDK.csproj" />
+	</ItemGroup>
+
+</Project>

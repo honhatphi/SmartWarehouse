@@ -33,7 +33,6 @@ internal sealed class PlcConnectionManager : IDisposable
         {
             if (_connectors.TryGetValue(ipAddress, out var connector))
             {
-                connector.Dispose();
                 _connectors.Remove(ipAddress);
                 return true;
             }

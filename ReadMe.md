@@ -59,7 +59,7 @@ Kích hoạt thiết bị.
 
 ### `void DeactivateDevice(string deviceId)`
 
-Ngắt kết nối với thiết bị.
+Ngắt kết nối với thiết bị. (Bao gồm việc xóa tất cả task đang có trong hàng đợi)
 
 - **Parameters:**
   - `deviceId`: ID của thiết bị cần hủy kích hoạt.
@@ -168,12 +168,22 @@ Danh sách các lệnh đang chờ xử lý trong hàng đợi.
 
 - **Returns:** Danh sách lệnh.
 
-### `void RemoveTransportTasks(IEnumerable<string> taskIds)`
+### `bool RemoveTransportTasks(IEnumerable<string> taskIds)`
 
 Loại bỏ một hoặc nhiều khỏi hàng đợi.
 
 - **Parameters:**
   - `taskIds`: Danh sách ID lệnh cần loại bỏ.
+
+- **Returns:** False nếu list trống hoặc chưa dừng (IsPauseQueue = False), True nếu return thành công.
+
+### `string? GetCurrentTask(string deviceId)`
+Lấy TaskId đang thực hiện
+
+- **Parameters:**
+  - `deviceId`: Id của shuttle.
+
+- **Returns:** TaskId hoặc null.
 
 ### `void PauseQueue()`
 Tạm dừng chạy lệnh (các lệnh đang chạy vẫn tiếp tục đến khi hoàn thành)
