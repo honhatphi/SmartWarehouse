@@ -137,7 +137,7 @@ Gửi lệnh chuyển vị trí
 
 ### `async Task SendValidationResult(string deviceId, string taskId, bool isValid, Location? targetLocation, Direction direction, short gateNumber)`
 
-Gửi kết quả xác thực mã vạch đến thiết bị.
+Gửi kết quả xác thực mã vạch đến thiết bị. (Dùng để phản hồi lại event BarcodeReceived)
 
 - **Parameters:**
   - `deviceId`: ID của thiết bị cần gửi kết quả.
@@ -209,6 +209,116 @@ Kiểm tra tính duy nhất của ID thiết bị trong danh sách cấu hình.
 
 - **Exceptions:**
   - `ArgumentException`: Ném ra nếu có ID trùng lặp.
+
+## Object Definitions
+
+### `DeviceProfile`
+Cấu hình thiết bị PLC.  
+- **Properties:**
+  - `Id`: Định danh duy nhất (e.g., "SHUTTLE_01").
+  - `IpAddress`: Địa chỉ IP của PLC.
+  - `Cpu`: Loại CPU của PLC (mặc định: S7-1200).
+  - `Rack`: Thông số PLC (mặc định: 0).
+  - `Slot`: Thông số PLC (mặc định: 1).
+  - `Signals`: Địa chỉ các thanh ghi (`SignalMap`).
+  - `HasSupportInbound`: Hỗ trợ lệnh nhập kho.
+  - `PollingIntervalSeconds`: Khoảng thời gian polling trạng thái (mặc định: 1 giây).
+  - `TimeoutMinutes`: Timeout cho lệnh (mặc định: 10 phút).
+
+### `BarcodeReceivedEventArgs`
+Sự kiện khi nhận mã vạch từ thiết bị PLC.  
+- **Properties:**
+  - `DeviceId`: ID thiết bị PLC.
+  - `TaskId`: ID nhiệm vụ đang xử lý.
+  - `Barcode`: Mã vạch (10 ký tự). 
+  Nếu chưa đủ 10 kí tự thì sẽ thay là 0 ví dụ: Pallet `1234` thì barcode nhận là `0000001234`
+
+### `TaskFailedEventArgs`
+Sự kiện khi nhiệm vụ thất bại.  
+- **Properties:**
+  - `DeviceId`: ID thiết bị PLC.
+  - `TaskId`: ID nhiệm vụ thất bại.
+  - `ErrorDetail`: Chi tiết lỗi (`ErrorDetail`).
+
+### `ErrorDetail`
+Thông tin chi tiết về lỗi.  
+- **Properties:**
+  - `ErrorCode`: Mã lỗi.
+  - `ErrorMessage`: Mô tả lỗi.
+
+### `TaskSucceededEventArgs`
+Sự kiện khi nhiệm vụ hoàn thành thành công.  
+- **Properties:**
+  - `DeviceId`: ID thiết bị PLC.
+  - `TaskId`: ID nhiệm vụ thành công.
+
+### `DeviceInfo`
+Thông tin thiết bị và vị trí hiện tại.  
+- **Properties:**
+  - `DeviceId`: ID thiết bị.
+  - `Location`: Vị trí hiện tại (`Location`).
+
+### `Location`
+Vị trí trong kho (tầng, dãy, kệ).  
+- **Properties:**
+  - `Floor`: Tầng (short) (1 => 7).
+  - `Rail`: Dãy (short) (1 => 24 dãy).
+  - `Block`: Kệ (short) (GĐ1: Bao gồm 3 và 5).
+
+### `Direction`
+Hướng di chuyển của shuttle vào block (Top hoặc Bottom).
+Áp dụng cho block 3 (GĐ1 thì tất cả giá trị đều là Bottom)
+- **Type:** Enum (giá trị: `Top`, `Bottom`).
+
+### `TransportTask`
+Lệnh di chuyển pallet.  
+- **Properties:**
+  - `TaskId`: ID lệnh.
+  - `CommandType`: Loại lệnh (`Inbound`, `Outbound`, `Transfer`).
+  - `SourceLocation`: Vị trí nguồn (`Location`, dùng cho `Outbound` và `Transfer`).
+  - `TargetLocation`: Vị trí đích (`Location`, dùng cho `Transfer`).
+  - `GateNumber`: Số cửa xuất/nhập (short).
+  - `InDirBlock`: Hướng vào block (`Direction`, dùng cho `Transfer`).
+  - `OutDirBlock`: Hướng ra block (`Direction`, dùng cho `Outbound` và `Transfer`).
+
+### `SignalMap`
+Địa chỉ các thanh ghi PLC.  
+- **Command Properties:**
+  - `InboundCommand`: Lệnh nhập.
+  - `OutboundCommand`: Lệnh xuất.
+  - `TransferCommand`: Lệnh chuyển.
+  - `StartProcessCommand`: Bắt đầu quá trình.
+- **Status Properties:**
+  - `CommandAcknowledged`: Lệnh được xác nhận.
+  - `CommandRejected`: Lệnh bị từ chối.
+  - `InboundComplete`: Hoàn thành nhập.
+  - `OutboundComplete`: Hoàn thành xuất.
+  - `TransferComplete`: Hoàn thành chuyển.
+  - `Alarm`: Lỗi khi thực hiện.
+- **Gate & Direction Properties:**
+  - `OutDirBlock`: Hướng xuất.
+  - `InDirBlock`: Hướng nhập.
+  - `GateNumber`: Cửa xuất/nhập.
+- **Source Location Properties:**
+  - `SourceFloor`: Tầng nguồn.
+  - `SourceRail`: Dãy nguồn.
+  - `SourceBlock`: Kệ nguồn.
+- **Target Location Properties:**
+  - `TargetFloor`: Tầng đích.
+  - `TargetRail`: Dãy đích.
+  - `TargetBlock`: Kệ đích.
+- **Feedback Properties:**
+  - `BarcodeValid`: Mã vạch hợp lệ.
+  - `BarcodeInvalid`: Mã vạch không hợp lệ.
+  - `ActualFloor`: Tầng thực tế.
+  - `ActualRail`: Dãy thực tế.
+  - `ActualBlock`: Kệ thực tế.
+  - `ErrorCode`: Mã lỗi.
+  - `BarcodeChar1` to `BarcodeChar10`: Ký tự mã vạch (`Barcode`, Int).
+
+### `Khác`
+- `DeviceId`: Chính là Id trong DeviceProfile được cấu hình lúc khởi tạo AutomationGatewayBase
+- `TaskId`: Sẽ tương ứng với các lệnh nhập - xuất - chuyển trong kho với tỉ lệ 1 pallet là 1 lệnh.
 
 ## Lưu ý
 
@@ -326,5 +436,7 @@ public class GatewayBackgroundService : BackgroundService
     public void ResumeQueue() => _gateway.ResumeQueue();
 
     public bool IsPauseQueue => _gateway.IsPauseQueue;
+
+    public string? GetCurrentTask(string deviceId) => _gateway.GetCurrentTask(deviceId);
 }
 ```
