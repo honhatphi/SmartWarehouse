@@ -320,6 +320,44 @@ Lệnh di chuyển pallet.
 - `DeviceId`: Chính là Id trong DeviceProfile được cấu hình lúc khởi tạo AutomationGatewayBase
 - `TaskId`: Sẽ tương ứng với các lệnh nhập - xuất - chuyển trong kho với tỉ lệ 1 pallet là 1 lệnh.
 
+## Luồng xử lý lệnh nhập kho
+
+```mermaid
+sequenceDiagram
+    participant PM as Phần mềm
+    participant DLL as DLL
+
+    PM->>DLL: Gửi lệnh nhập SendInboundCommand(taskId=123)
+    DLL->> DLL: Bật scanner
+    DLL-->> DLL: Chờ quét barcode
+    DLL->>PM: Gửi barcode + taskId=123 thông qua event BarcodeReceived(DeviceId, TaskId, Barcode)
+    PM->>PM: Kiểm tra taskId, barcode
+    alt Hợp lệ
+        PM->>DLL: Gọi SendValidationResult
+        DLL->> DLL: Xử lý lệnh nhập
+    else Không hợp lệ
+        PM->>PM: Gọi PauseQueue()
+    end
+
+```
+
+## Luồng xử lý lỗi và continue
+```mermaid
+sequenceDiagram
+    participant PM as Phần mềm
+    participant DLL as DLL
+    participant NV as Nhân viên vận hành
+
+    PM->>DLL: Đăng ký sự kiện TaskFailed
+    DLL->>DLL: Xử lý lệnh gặp lỗi
+    DLL->>DLL: Gọi PauseQueue()
+    DLL->>PM: Invoke sự kiện TaskFailed
+    DLL->>DLL: Remove lệnh khỏi queue
+    NV->>NV: Xử lý lỗi & reset PLC manual
+    NV->>PM: Báo hoàn thành
+    PM->>PM: Gọi ResumeQueue() để tiếp tục chạy lệnh sau
+```
+
 ## Lưu ý
 
 - Lớp này là abstract, vì vậy cần kế thừa để sử dụng.

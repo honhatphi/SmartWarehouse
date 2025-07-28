@@ -64,7 +64,7 @@ internal sealed class BarcodeHandler : IDisposable
     {
         var tcs = new TaskCompletionSource<bool>();
         var cts = new CancellationTokenSource();
-        int timeOut = 2;
+        int timeOut = 5;
         _pendingResponses[taskId] = (deviceId, tcs, cts);
 
         try
