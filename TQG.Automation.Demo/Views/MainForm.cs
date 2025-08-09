@@ -20,7 +20,7 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
 {
     private readonly GatewayBackgroundService _gatewayService;
     private readonly MovingTaskRepository _repository;
-    private TransportTask? _selectedTask;
+    private MovingTask? _selectedTask;
     private const string DeviceId = "Shuttle01";
 
     public MainForm(GatewayBackgroundService gatewayService)
@@ -31,11 +31,11 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
         _gatewayService.BarcodeReceived += OnBarcodeReceived;
         _gatewayService.TaskSucceeded += OnTaskSucceeded;
         _gatewayService.TaskFailed += OnTaskFailed;
+        _gatewayService.BarcodeExecute += OnExecute;
 
         _repository = MovingTaskRepository.Instance;
 
         Load += MainForm_Load;
-
     }
 
     private void MainForm_Load(object? sender, EventArgs e)
@@ -66,10 +66,12 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
 
         gridView1.FocusedRowChanged += GridView1_FocusedRowChanged;
 
+        BtExecute.Visible = false;
         BtPause.Visible = false;
-        BtResume.Visible = false;
+        BtnDelete.Visible = false;
+        BtnDeleteAll.Visible = false;
+        BtReset.Visible = false;
 
-        StartPollingLocation(true);
     }
 
     private Task StartPollingLocation(bool isPolling)
@@ -92,29 +94,6 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
                 }
                 try
                 {
-                    Location? location = await _gatewayService.GetActualLocationAsync(DeviceId)!;
-
-                    if (location == null)
-                    {
-                        continue;
-                    }
-
-                    if (InvokeRequired)
-                    {
-                        Invoke(new Action(() =>
-                        {
-                            TbCurFloor.Value = location.Floor;
-                            TbCurRail.Value = location.Rail;
-                            TbCurBlock.Value = location.Block;
-                        }));
-                    }
-                    else
-                    {
-                        TbCurFloor.Value = location.Floor;
-                        TbCurRail.Value = location.Rail;
-                        TbCurBlock.Value = location.Block;
-                    }
-
                     List<TransportTask> queue = [.. _gatewayService.GetPendingTask()];
                     string? taskId = _gatewayService.GetCurrentTask(DeviceId);
 
@@ -125,15 +104,26 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
                         TbTaskId.Text = taskId ?? "";
                     }));
 
+                    Location? location = await _gatewayService.GetActualLocationAsync(DeviceId)!;
 
+                    if (location == null)
+                    {
+                        continue;
+                    }
 
+                    Invoke(new Action(() =>
+                    {
+                        TbCurFloor.Value = location.Floor;
+                        TbCurRail.Value = location.Rail;
+                        TbCurBlock.Value = location.Block;
+                    }));
                 }
                 catch (Exception ex)
                 {
                     AppendLogToMemoEdit($"Error polling location: {ex.Message}");
                 }
 
-                await Task.Delay(1000);
+                await Task.Delay(500);
             }
         });
     }
@@ -145,8 +135,26 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
         _repository.DeleteTask(e.TaskId);
         gridControl1.RefreshDataSource();
 
-        Invoke(new Action(DisConnect));
-        Invoke(new Action(HideButton));
+        Invoke(new Action(() =>
+        {
+            BtPause.Visible = false;
+            TransportTask[] taskQueueAfter = _gatewayService.GetPendingTask();
+
+            BtReset.Visible = true;
+
+            if (taskQueueAfter.Length > 0)
+            {
+                BtnDelete.Visible = true;
+                BtnDeleteAll.Visible = true;
+                BtExecute.Visible = true;
+            }
+            else
+            {
+                BtnDelete.Visible = false;
+                BtnDeleteAll.Visible = false;
+                BtExecute.Visible = false;
+            }
+        }));
     }
 
     private void OnTaskSucceeded(object? sender, TaskSucceededEventArgs e)
@@ -157,52 +165,62 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
 
         gridControl1.RefreshDataSource();
 
-        Invoke(new Action(HideButton));
-    }
-
-    private void HideButton()
-    {
-        TransportTask[] taskQueueAfter = _gatewayService.GetPendingTask();
-
-        if (taskQueueAfter.Length == 0)
+        Invoke(new Action(() =>
         {
-            BtResume.Visible = false;
-            BtPause.Visible = false;
-        }
+            TransportTask[] taskQueueAfter = _gatewayService.GetPendingTask();
+
+            if (taskQueueAfter.Length > 0)
+            {
+                BtPause.Visible = true;
+                BtnDelete.Visible = false;
+                BtnDeleteAll.Visible = false;
+                BtExecute.Visible = false;
+            }
+            else
+            {
+                BtPause.Visible = false;
+                BtExecute.Visible = false;
+                BtnDelete.Visible = false;
+                BtnDeleteAll.Visible = false;
+            }
+        }));
     }
 
     private void OnBarcodeReceived(object? sender, BarcodeReceivedEventArgs e)
     {
-        string logMessage = $"[{DateTime.Now}] Info: Nhận Barcode {e.Barcode} cửa Task {e.TaskId} cho {e.DeviceId}.";
+        string logMessage = $"[{DateTime.Now}] Info: Nhận Barcode [{e.Barcode}] Task [{e.TaskId}] cho {e.DeviceId}.";
 
         AppendLogToMemoEdit(logMessage);
+    }
 
-        _repository.DeleteByBarcode(e.Barcode);
+    private void OnExecute(object? sender, BarcodeExecuteEventArgs e)
+    {
+        string status = e.IsValid ? "hợp lệ" : "không hợp lệ";
+        string logMessage = $"[{DateTime.Now}] Info: Xác thực Barcode [{e.Barcode}] {status}.";
+        AppendLogToMemoEdit(logMessage);
 
-        gridControl1.RefreshDataSource();
-
-        Invoke(new Action(HideButton));
-
+        if (e.IsValid && e.TargetLocation != null)
+        {
+            string locationMessage = $"[{DateTime.Now}] Info: Nhập Barcode [{e.Barcode}] đến vị trí Block: {e.TargetLocation.Block}, Floor {e.TargetLocation.Floor}, Rail {e.TargetLocation.Rail}";
+            AppendLogToMemoEdit(locationMessage);
+        }
     }
 
     private void AppendLogToMemoEdit(string message)
     {
-        if (memoEdit1.InvokeRequired)
+        Invoke(new Action(() =>
         {
-            memoEdit1.BeginInvoke(new Action(() => AppendLogToMemoEdit(message)));
-            return;
-        }
+            memoEdit1.Text += message + Environment.NewLine;
 
-        memoEdit1.Text += message + Environment.NewLine;
+            memoEdit1.SelectionStart = memoEdit1.Text.Length;
+            memoEdit1.ScrollToCaret();
 
-        memoEdit1.SelectionStart = memoEdit1.Text.Length;
-        memoEdit1.ScrollToCaret();
-
-        string[] lines = memoEdit1.Lines;
-        if (lines.Length > 1000)
-        {
-            memoEdit1.Lines = [.. lines.Skip(1)];
-        }
+            string[] lines = memoEdit1.Lines;
+            if (lines.Length > 1000)
+            {
+                memoEdit1.Lines = [.. lines.Skip(1)];
+            }
+        }));
     }
 
     private async void BtnConnect_Click(object sender, EventArgs e)
@@ -215,12 +233,18 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
 
             AppendLogToMemoEdit(logMessage);
 
-            checkEditStatus.Checked = true;
-            checkEditStatus.Properties.Caption = "Đã kết nối";
-            checkEditStatus.ForeColor = Color.Green;
+            Invoke(new Action(() =>
+            {
+                checkEditStatus.Checked = true;
+                checkEditStatus.Properties.Caption = "Đã kết nối";
+                checkEditStatus.ForeColor = Color.Green;
 
-            BtnConnect.Enabled = false;
-            BtnDisconnect.Enabled = true;
+                BtnConnect.Enabled = false;
+                BtnDisconnect.Enabled = true;
+
+            }));
+
+            await StartPollingLocation(true);
         }
         catch (DeviceNotRegisteredException)
         {
@@ -249,23 +273,22 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
             return;
         }
 
-        DisConnect();
-
-        StartPollingLocation(false);
-    }
-
-    private void DisConnect()
-    {
         _gatewayService.DeactivateDevice(DeviceId);
 
-        checkEditStatus.Properties.Caption = "Chưa kết nối";
-        checkEditStatus.ForeColor = Color.Gray;
+        Invoke(new Action(() =>
+        {
+            checkEditStatus.Properties.Caption = "Chưa kết nối";
+            checkEditStatus.ForeColor = Color.Gray;
 
-        BtnConnect.Enabled = true;
-        BtnDisconnect.Enabled = false;
+            BtnConnect.Enabled = true;
+            BtnDisconnect.Enabled = false;
+
+        }));
 
         string logMessage = $"[{DateTime.Now}] Info: {DeviceId} đóng kết nối thành công.";
         AppendLogToMemoEdit(logMessage);
+
+        StartPollingLocation(false);
     }
 
     private void BtRefresh_Click(object sender, EventArgs e)
@@ -274,11 +297,17 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
         gridControl1.RefreshDataSource();
     }
 
-    private void BtAddCommand_Click(object sender, EventArgs e)
+    private async void BtAddCommand_Click(object sender, EventArgs e)
     {
         if (string.IsNullOrEmpty(TbGateNumber.Text))
         {
             XtraMessageBox.Show("Vui lòng nhập đầy đủ thông tin.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        if(TbSrcBlock.Value == 4 || TbTargetBlock.Value == 4)
+        {
+            XtraMessageBox.Show("Block là 3 hoặc 5.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
 
@@ -298,7 +327,7 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
 
             Direction inDir = ToggleInDir.IsOn ? Direction.Top : Direction.Bottom;
             Direction outDir = ToggleOutDir.IsOn ? Direction.Top : Direction.Bottom;
-            string barcode = ((int)TbBarcode.Value).ToString("D10");
+            string barcode = TbBarcode.Value.ToString();
 
             var newTask = new MovingTask
             {
@@ -314,12 +343,58 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
 
             _repository.AddTask(newTask);
 
-            ResetLocationValues();
-            CbCommand.SelectedIndex = 0;
-            gridControl1.RefreshDataSource();
-            BtExecute.Visible = true;
+            Invoke(new Action(() =>
+            {
+                ResetLocationValues();
+                CbCommand.SelectedIndex = 0;
+                gridControl1.RefreshDataSource();
 
-            string logMessage = $"[{DateTime.Now}] Info: Thêm Task {newTaskId} loại {cmdType} thành công.";
+                BtExecute.Visible = true;
+                BtnDelete.Visible = true;
+                BtnDeleteAll.Visible = true;
+                BtPause.Visible = false;
+            }));
+
+            var command = new TransportTask
+            {
+                TaskId = newTask.TaskId,
+                CommandType = newTask.CommandType,
+                GateNumber = newTask.GateNumber,
+                InDirBlock = newTask.InDirBlock,
+                OutDirBlock = newTask.OutDirBlock,
+                SourceLocation = newTask.SourceLocation,
+                TargetLocation = newTask.TargetLocation,
+            };
+
+            await _gatewayService.SendMultipleCommands([command]);
+
+            string type = cmdType switch
+            {
+                CommandType.Inbound => "Nhập hàng",
+                CommandType.Outbound => "Xuất hàng",
+                _ => "Chuyển vị trí"
+            };
+
+            string logMessage = $"[{DateTime.Now}] Info: Thêm {newTaskId} [Lệnh {type}] thành công.";
+
+
+            if (cmdType == CommandType.Inbound)
+            {
+                logMessage = $"[{DateTime.Now}] Info: Thêm {newTaskId} [Lệnh {type}] đến vị trí " +
+                    $"Block {newTask.TargetLocation!.Block}, Floor {newTask.TargetLocation!.Floor}, Rail {newTask.TargetLocation!.Rail} thành công.";
+            }
+            else if (cmdType == CommandType.Outbound)
+            {
+                logMessage = $"[{DateTime.Now}] Info: Thêm {newTaskId} [Lệnh {type}] từ vị trí " +
+                    $"Block {newTask.SourceLocation!.Block}, Floor {newTask.SourceLocation!.Floor}, Rail {newTask.SourceLocation!.Rail} thành công.";
+            }
+            else
+            {
+                logMessage = $"[{DateTime.Now}] Info: Thêm {newTaskId} [Lệnh {type}] từ vị trí " +
+                    $"Block {newTask.SourceLocation!.Block}, Floor {newTask.SourceLocation!.Floor}, Rail {newTask.SourceLocation!.Rail} " +
+                    $"đến vị trí Block {newTask.TargetLocation!.Block}, Floor {newTask.TargetLocation!.Floor}, Rail {newTask.TargetLocation!.Rail} thành công.";
+            }
+
             AppendLogToMemoEdit(logMessage);
         }
     }
@@ -358,7 +433,18 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
             TbTargetFloor.Enabled = enableTarget;
             TbTargetRail.Enabled = enableTarget;
             TbTargetBlock.Enabled = enableTarget;
-            TbBarcode.Enabled = enableTarget;
+
+            if (selectedType == CommandType.Inbound)
+            {
+                TbBarcode.Enabled = true;
+            }
+            else
+            {
+                TbBarcode.Enabled = false;
+            }
+
+
+            ResetLocationValues();
         }
     }
 
@@ -366,13 +452,13 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
     {
         TbSrcFloor.Value = 1;
         TbSrcRail.Value = 1;
-        TbSrcBlock.Value = 5;
+        TbSrcBlock.Value = 3;
 
         TbTargetFloor.Value = 1;
         TbTargetRail.Value = 1;
-        TbTargetBlock.Value = 5;
+        TbTargetBlock.Value = 3;
 
-        TbBarcode.Value = 1;
+        TbBarcode.Value = 105;
 
         ToggleInDir.Enabled = false;
         ToggleOutDir.Enabled = false;
@@ -440,19 +526,11 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
     private void GridView1_FocusedRowChanged(object sender, DevExpress.XtraGrid.Views.Base.FocusedRowChangedEventArgs e)
     {
         var row = gridView1.GetFocusedRow();
-        _selectedTask = row as TransportTask;
+        _selectedTask = row as MovingTask;
     }
 
     private void BtnDelete_Click(object sender, EventArgs e)
     {
-        bool isPause = _gatewayService.IsPauseQueue;
-        if (!isPause)
-        {
-            XtraMessageBox.Show("Vui lòng đóng hàng đợi trước khi xóa.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-            return;
-        }
-
         if (_selectedTask == null)
         {
             XtraMessageBox.Show("Vui lòng chọn một lệnh để xóa.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -462,121 +540,112 @@ public partial class MainForm : DevExpress.XtraEditors.XtraForm
         string confirmMessage = $"Bạn có chắc chắn muốn xóa {_selectedTask.TaskId}?";
         if (XtraMessageBox.Show(confirmMessage, "Xác nhận xóa", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK)
         {
-            _repository.DeleteTask(_selectedTask.TaskId);
             _gatewayService.RemoveTransportTasks([_selectedTask.TaskId]);
+            _repository.DeleteTask(_selectedTask.TaskId);
             gridControl1.RefreshDataSource();
             _selectedTask = null;
 
             string logMessage = $"[{DateTime.Now}] Info: Xóa task {_selectedTask?.TaskId} thành công.";
             AppendLogToMemoEdit(logMessage);
+
+            Invoke(new Action(() =>
+            {
+                TransportTask[] taskQueueAfter = _gatewayService.GetPendingTask();
+
+                if (taskQueueAfter.Length == 0)
+                {
+                    BtPause.Visible = false;
+                    BtExecute.Visible = false;
+                    BtnDelete.Visible = false;
+                    BtnDeleteAll.Visible = false;
+                }
+            }));
         }
-
-        Invoke(new Action(HideButton));
-
     }
 
     private void BtnDeleteAll_Click(object sender, EventArgs e)
     {
-        bool isPause = _gatewayService.IsPauseQueue;
-        if (!isPause)
-        {
-            XtraMessageBox.Show("Vui lòng đóng hàng đợi trước khi xóa.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
-        }
-
         string confirmMessage = $"Bạn có chắc chắn muốn xóa tất cả các lệnh?";
         if (XtraMessageBox.Show(confirmMessage, "Xác nhận xóa", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK)
         {
             var tasks = _repository.GetAll().Select(x => x.TaskId);
-            _gatewayService.RemoveTransportTasks(tasks);
 
+            _gatewayService.RemoveTransportTasks(tasks);
             _repository.DeleteAllTasks();
             gridControl1.RefreshDataSource();
             _selectedTask = null;
 
             string logMessage = $"[{DateTime.Now}] Info: Tất cả task đã được xóa.";
             AppendLogToMemoEdit(logMessage);
-        }
 
-        Invoke(new Action(HideButton));
+            Invoke(new Action(() =>
+            {
+                BtPause.Visible = false;
+                BtExecute.Visible = false;
+                BtnDelete.Visible = false;
+                BtnDeleteAll.Visible = false;
+            }));
+        }
     }
 
-    private async void BtExecute_Click(object sender, EventArgs e)
+    private void BtExecute_Click(object sender, EventArgs e)
     {
-        try
+        if (!checkEditStatus.Checked)
         {
-            List<MovingTask> commands = _repository.GetAll();
+            XtraMessageBox.Show("Kết nối trước khi chạy.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
 
-            if (commands.Count == 0)
-            {
-                XtraMessageBox.Show("Chưa có lệnh nào để chạy.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
+        if (BtReset.Visible)
+        {
+            XtraMessageBox.Show("Reset trước.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
 
-            var results = commands.Select(x => new TransportTask
-            {
-                TaskId = x.TaskId,
-                CommandType = x.CommandType,
-                GateNumber = x.GateNumber,
-                InDirBlock = x.InDirBlock,
-                OutDirBlock = x.OutDirBlock,
-                SourceLocation = x.SourceLocation,
-                TargetLocation = x.TargetLocation,
-            }).ToList();
-
-            await _gatewayService.SendMultipleCommands(results);
+        Invoke(new Action(() =>
+        {
+            TransportTask[] taskQueueAfter = _gatewayService.GetPendingTask();
 
             BtExecute.Visible = false;
+            BtnDelete.Visible = false;
+            BtnDeleteAll.Visible = false;
             BtPause.Visible = true;
-        }
-        catch (Exception ex)
-        {
-            string logMessage = $"[{DateTime.Now}] Error: Gửi lệnh thất bại, Lỗi {ex.Message}.";
-            AppendLogToMemoEdit(logMessage);
-        }
 
+            if (taskQueueAfter.Length > 0)
+            {
+                _gatewayService.ResumeQueue();
+            }
+            else
+            {
+                XtraMessageBox.Show("Thêm lệnh trước khi chạy.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }));
     }
 
     private void BtPause_Click(object sender, EventArgs e)
     {
-        BtResume.Visible = true;
-        BtPause.Visible = false;
-
-        _gatewayService.PauseQueue();
-    }
-
-    private void BtResume_Click(object sender, EventArgs e)
-    {
-        BtResume.Visible = false;
-
-        _gatewayService.ResumeQueue();
-
-        if (_repository.Count > 0)
+        Invoke(new Action(() =>
         {
-            BtPause.Visible = true;
-        }
-        else
-        {
-            BtExecute.Visible = true;
-        }
-    }
-
-    private void BtQueue_Click(object sender, EventArgs e)
-    {
-        try
-        {
-            List<TransportTask> queue = [.. _gatewayService.GetPendingTask()];
-            CbIsResume.Checked = _gatewayService.IsPauseQueue;
-            Invoke(new Action(() =>
+            TransportTask[] taskQueueAfter = _gatewayService.GetPendingTask();
+            if (taskQueueAfter.Length > 0)
             {
-                TbCountQueue.Value = queue.Count;
-                CbIsResume.Checked = _gatewayService.IsPauseQueue;
-            }));
+                BtExecute.Visible = true;
+                BtnDelete.Visible = true;
+                BtnDeleteAll.Visible = true;
+            }
 
-        }
-        catch (Exception ex)
+            BtPause.Visible = false;
+            _gatewayService.PauseQueue();
+        }));
+    }
+
+    private void BtReset_Click(object sender, EventArgs e)
+    {
+        Invoke(new Action(() =>
         {
-            AppendLogToMemoEdit($"[{DateTime.Now}] Error: Đọc queue thất bại: {ex.Message}");
-        }
+            BtReset.Visible = false;
+        }));
+
+        _gatewayService.ResetDeviceStatus(DeviceId);
     }
 }

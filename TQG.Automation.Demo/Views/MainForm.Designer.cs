@@ -142,9 +142,9 @@ partial class MainForm
         BtnDeleteAll = new DevExpress.XtraEditors.SimpleButton();
         BtExecute = new DevExpress.XtraEditors.SimpleButton();
         BtPause = new DevExpress.XtraEditors.SimpleButton();
-        BtResume = new DevExpress.XtraEditors.SimpleButton();
         TbTaskId = new DevExpress.XtraEditors.TextEdit();
         labelControl4 = new DevExpress.XtraEditors.LabelControl();
+        BtReset = new DevExpress.XtraEditors.SimpleButton();
         ((System.ComponentModel.ISupportInitialize)memoEdit1.Properties).BeginInit();
         ((System.ComponentModel.ISupportInitialize)groupControl1).BeginInit();
         groupControl1.SuspendLayout();
@@ -255,10 +255,10 @@ partial class MainForm
         BtRefresh.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Bold);
         BtRefresh.Appearance.Options.UseBackColor = true;
         BtRefresh.Appearance.Options.UseFont = true;
-        BtRefresh.Location = new System.Drawing.Point(548, 195);
+        BtRefresh.Location = new System.Drawing.Point(547, 194);
         BtRefresh.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
         BtRefresh.Name = "BtRefresh";
-        BtRefresh.Size = new System.Drawing.Size(181, 45);
+        BtRefresh.Size = new System.Drawing.Size(183, 47);
         BtRefresh.StyleController = layoutControl1;
         BtRefresh.TabIndex = 13;
         BtRefresh.Text = "Làm mới";
@@ -270,10 +270,10 @@ partial class MainForm
         BtAddCommand.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Bold);
         BtAddCommand.Appearance.Options.UseBackColor = true;
         BtAddCommand.Appearance.Options.UseFont = true;
-        BtAddCommand.Location = new System.Drawing.Point(359, 195);
+        BtAddCommand.Location = new System.Drawing.Point(358, 194);
         BtAddCommand.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
         BtAddCommand.Name = "BtAddCommand";
-        BtAddCommand.Size = new System.Drawing.Size(179, 45);
+        BtAddCommand.Size = new System.Drawing.Size(181, 47);
         BtAddCommand.StyleController = layoutControl1;
         BtAddCommand.TabIndex = 12;
         BtAddCommand.Text = "Thêm lệnh";
@@ -281,32 +281,32 @@ partial class MainForm
         // 
         // ToggleOutDir
         // 
-        ToggleOutDir.Location = new System.Drawing.Point(600, 147);
+        ToggleOutDir.Location = new System.Drawing.Point(604, 150);
         ToggleOutDir.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
         ToggleOutDir.Name = "ToggleOutDir";
         ToggleOutDir.Properties.AutoHeight = false;
         ToggleOutDir.Properties.OffText = "Bottom";
         ToggleOutDir.Properties.OnText = "Top";
-        ToggleOutDir.Size = new System.Drawing.Size(132, 41);
+        ToggleOutDir.Size = new System.Drawing.Size(125, 35);
         ToggleOutDir.StyleController = layoutControl1;
         ToggleOutDir.TabIndex = 11;
         // 
         // ToggleInDir
         // 
-        ToggleInDir.Location = new System.Drawing.Point(352, 147);
+        ToggleInDir.Location = new System.Drawing.Point(355, 150);
         ToggleInDir.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
         ToggleInDir.Name = "ToggleInDir";
         ToggleInDir.Properties.AutoHeight = false;
         ToggleInDir.Properties.OffText = "Bottom";
         ToggleInDir.Properties.OnText = "Top";
-        ToggleInDir.Size = new System.Drawing.Size(139, 41);
+        ToggleInDir.Size = new System.Drawing.Size(134, 35);
         ToggleInDir.StyleController = layoutControl1;
         ToggleInDir.TabIndex = 10;
         // 
         // TbGateNumber
         // 
         TbGateNumber.EditValue = new decimal(new int[] { 1, 0, 0, 0 });
-        TbGateNumber.Location = new System.Drawing.Point(600, 12);
+        TbGateNumber.Location = new System.Drawing.Point(604, 15);
         TbGateNumber.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
         TbGateNumber.Name = "TbGateNumber";
         TbGateNumber.Properties.Appearance.Font = new System.Drawing.Font("Tahoma", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
@@ -320,14 +320,14 @@ partial class MainForm
         TbGateNumber.Properties.MaskSettings.Set("mask", "d");
         TbGateNumber.Properties.MaxValue = new decimal(new int[] { 2, 0, 0, 0 });
         TbGateNumber.Properties.MinValue = new decimal(new int[] { 1, 0, 0, 0 });
-        TbGateNumber.Size = new System.Drawing.Size(132, 41);
+        TbGateNumber.Size = new System.Drawing.Size(125, 35);
         TbGateNumber.StyleController = layoutControl1;
         TbGateNumber.TabIndex = 2;
         // 
         // TbTargetBlock
         // 
-        TbTargetBlock.EditValue = new decimal(new int[] { 5, 0, 0, 0 });
-        TbTargetBlock.Location = new System.Drawing.Point(600, 102);
+        TbTargetBlock.EditValue = new decimal(new int[] { 3, 0, 0, 0 });
+        TbTargetBlock.Location = new System.Drawing.Point(604, 105);
         TbTargetBlock.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
         TbTargetBlock.Name = "TbTargetBlock";
         TbTargetBlock.Properties.Appearance.Font = new System.Drawing.Font("Tahoma", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
@@ -338,17 +338,18 @@ partial class MainForm
         TbTargetBlock.Properties.Appearance.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
         TbTargetBlock.Properties.AutoHeight = false;
         TbTargetBlock.Properties.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo, "", -1, true, false, false, editorButtonImageOptions2, new DevExpress.Utils.KeyShortcut(System.Windows.Forms.Keys.None), serializableAppearanceObject5, serializableAppearanceObject6, serializableAppearanceObject7, serializableAppearanceObject8, "", null, null, DevExpress.Utils.ToolTipAnchor.Default) });
+        TbTargetBlock.Properties.Increment = new decimal(new int[] { 2, 0, 0, 0 });
         TbTargetBlock.Properties.MaskSettings.Set("mask", "d");
         TbTargetBlock.Properties.MaxValue = new decimal(new int[] { 5, 0, 0, 0 });
         TbTargetBlock.Properties.MinValue = new decimal(new int[] { 3, 0, 0, 0 });
-        TbTargetBlock.Size = new System.Drawing.Size(132, 41);
+        TbTargetBlock.Size = new System.Drawing.Size(125, 35);
         TbTargetBlock.StyleController = layoutControl1;
         TbTargetBlock.TabIndex = 8;
         // 
         // TbTargetRail
         // 
         TbTargetRail.EditValue = new decimal(new int[] { 1, 0, 0, 0 });
-        TbTargetRail.Location = new System.Drawing.Point(352, 102);
+        TbTargetRail.Location = new System.Drawing.Point(355, 105);
         TbTargetRail.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
         TbTargetRail.Name = "TbTargetRail";
         TbTargetRail.Properties.Appearance.Font = new System.Drawing.Font("Tahoma", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
@@ -362,14 +363,14 @@ partial class MainForm
         TbTargetRail.Properties.MaskSettings.Set("mask", "d");
         TbTargetRail.Properties.MaxValue = new decimal(new int[] { 24, 0, 0, 0 });
         TbTargetRail.Properties.MinValue = new decimal(new int[] { 1, 0, 0, 0 });
-        TbTargetRail.Size = new System.Drawing.Size(139, 41);
+        TbTargetRail.Size = new System.Drawing.Size(134, 35);
         TbTargetRail.StyleController = layoutControl1;
         TbTargetRail.TabIndex = 7;
         // 
         // TbTargetFloor
         // 
         TbTargetFloor.EditValue = new decimal(new int[] { 1, 0, 0, 0 });
-        TbTargetFloor.Location = new System.Drawing.Point(117, 102);
+        TbTargetFloor.Location = new System.Drawing.Point(120, 105);
         TbTargetFloor.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
         TbTargetFloor.Name = "TbTargetFloor";
         TbTargetFloor.Properties.Appearance.Font = new System.Drawing.Font("Tahoma", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
@@ -383,14 +384,14 @@ partial class MainForm
         TbTargetFloor.Properties.MaskSettings.Set("mask", "d");
         TbTargetFloor.Properties.MaxValue = new decimal(new int[] { 7, 0, 0, 0 });
         TbTargetFloor.Properties.MinValue = new decimal(new int[] { 1, 0, 0, 0 });
-        TbTargetFloor.Size = new System.Drawing.Size(126, 41);
+        TbTargetFloor.Size = new System.Drawing.Size(120, 35);
         TbTargetFloor.StyleController = layoutControl1;
         TbTargetFloor.TabIndex = 6;
         // 
         // TbSrcRail
         // 
         TbSrcRail.EditValue = new decimal(new int[] { 1, 0, 0, 0 });
-        TbSrcRail.Location = new System.Drawing.Point(352, 57);
+        TbSrcRail.Location = new System.Drawing.Point(355, 60);
         TbSrcRail.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
         TbSrcRail.Name = "TbSrcRail";
         TbSrcRail.Properties.Appearance.Font = new System.Drawing.Font("Tahoma", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
@@ -404,14 +405,14 @@ partial class MainForm
         TbSrcRail.Properties.MaskSettings.Set("mask", "d");
         TbSrcRail.Properties.MaxValue = new decimal(new int[] { 24, 0, 0, 0 });
         TbSrcRail.Properties.MinValue = new decimal(new int[] { 1, 0, 0, 0 });
-        TbSrcRail.Size = new System.Drawing.Size(139, 41);
+        TbSrcRail.Size = new System.Drawing.Size(134, 35);
         TbSrcRail.StyleController = layoutControl1;
         TbSrcRail.TabIndex = 4;
         // 
         // TbSrcBlock
         // 
         TbSrcBlock.EditValue = new decimal(new int[] { 3, 0, 0, 0 });
-        TbSrcBlock.Location = new System.Drawing.Point(600, 57);
+        TbSrcBlock.Location = new System.Drawing.Point(604, 60);
         TbSrcBlock.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
         TbSrcBlock.Name = "TbSrcBlock";
         TbSrcBlock.Properties.Appearance.Font = new System.Drawing.Font("Tahoma", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
@@ -422,17 +423,18 @@ partial class MainForm
         TbSrcBlock.Properties.Appearance.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
         TbSrcBlock.Properties.AutoHeight = false;
         TbSrcBlock.Properties.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo, "", -1, true, false, false, editorButtonImageOptions6, new DevExpress.Utils.KeyShortcut(System.Windows.Forms.Keys.None), serializableAppearanceObject21, serializableAppearanceObject22, serializableAppearanceObject23, serializableAppearanceObject24, "", null, null, DevExpress.Utils.ToolTipAnchor.Default) });
+        TbSrcBlock.Properties.Increment = new decimal(new int[] { 2, 0, 0, 0 });
         TbSrcBlock.Properties.MaskSettings.Set("mask", "d");
         TbSrcBlock.Properties.MaxValue = new decimal(new int[] { 5, 0, 0, 0 });
         TbSrcBlock.Properties.MinValue = new decimal(new int[] { 3, 0, 0, 0 });
-        TbSrcBlock.Size = new System.Drawing.Size(132, 41);
+        TbSrcBlock.Size = new System.Drawing.Size(125, 35);
         TbSrcBlock.StyleController = layoutControl1;
         TbSrcBlock.TabIndex = 5;
         // 
         // TbSrcFloor
         // 
         TbSrcFloor.EditValue = new decimal(new int[] { 1, 0, 0, 0 });
-        TbSrcFloor.Location = new System.Drawing.Point(117, 57);
+        TbSrcFloor.Location = new System.Drawing.Point(120, 60);
         TbSrcFloor.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
         TbSrcFloor.Name = "TbSrcFloor";
         TbSrcFloor.Properties.Appearance.Font = new System.Drawing.Font("Tahoma", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
@@ -446,25 +448,26 @@ partial class MainForm
         TbSrcFloor.Properties.MaskSettings.Set("mask", "d");
         TbSrcFloor.Properties.MaxValue = new decimal(new int[] { 7, 0, 0, 0 });
         TbSrcFloor.Properties.MinValue = new decimal(new int[] { 1, 0, 0, 0 });
-        TbSrcFloor.Size = new System.Drawing.Size(126, 41);
+        TbSrcFloor.Size = new System.Drawing.Size(120, 35);
         TbSrcFloor.StyleController = layoutControl1;
         TbSrcFloor.TabIndex = 3;
         // 
         // CbCommand
         // 
-        CbCommand.Location = new System.Drawing.Point(117, 12);
+        CbCommand.Location = new System.Drawing.Point(120, 15);
         CbCommand.Margin = new System.Windows.Forms.Padding(2, 1, 2, 1);
         CbCommand.Name = "CbCommand";
         CbCommand.Properties.AutoHeight = false;
         CbCommand.Properties.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] { new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo) });
-        CbCommand.Size = new System.Drawing.Size(374, 41);
+        CbCommand.Size = new System.Drawing.Size(369, 35);
         CbCommand.StyleController = layoutControl1;
         CbCommand.TabIndex = 0;
         // 
         // TbBarcode
         // 
-        TbBarcode.EditValue = new decimal(new int[] { 1, 0, 0, 0 });
-        TbBarcode.Location = new System.Drawing.Point(117, 147);
+        TbBarcode.EditValue = new decimal(new int[] { 105, 0, 0, 0 });
+        TbBarcode.Location = new System.Drawing.Point(120, 150);
+        TbBarcode.Margin = new System.Windows.Forms.Padding(2);
         TbBarcode.Name = "TbBarcode";
         TbBarcode.Properties.Appearance.Font = new System.Drawing.Font("Tahoma", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
         TbBarcode.Properties.Appearance.ForeColor = System.Drawing.Color.Red;
@@ -478,7 +481,7 @@ partial class MainForm
         TbBarcode.Properties.MaskSettings.Set("mask", "d");
         TbBarcode.Properties.MaxValue = new decimal(new int[] { 1410065407, 2, 0, 0 });
         TbBarcode.Properties.MinValue = new decimal(new int[] { 1, 0, 0, 0 });
-        TbBarcode.Size = new System.Drawing.Size(126, 41);
+        TbBarcode.Size = new System.Drawing.Size(120, 35);
         TbBarcode.StyleController = layoutControl1;
         TbBarcode.TabIndex = 9;
         // 
@@ -499,9 +502,11 @@ partial class MainForm
         layoutControlItem1.AppearanceItemCaption.Options.UseForeColor = true;
         layoutControlItem1.Control = CbCommand;
         layoutControlItem1.Location = new System.Drawing.Point(0, 0);
-        layoutControlItem1.MinSize = new System.Drawing.Size(54, 10);
+        layoutControlItem1.MaxSize = new System.Drawing.Size(484, 45);
+        layoutControlItem1.MinSize = new System.Drawing.Size(484, 45);
         layoutControlItem1.Name = "layoutControlItem1";
-        layoutControlItem1.Size = new System.Drawing.Size(483, 45);
+        layoutControlItem1.Padding = new DevExpress.XtraLayout.Utils.Padding(5, 5, 5, 5);
+        layoutControlItem1.Size = new System.Drawing.Size(484, 45);
         layoutControlItem1.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
         layoutControlItem1.Text = "Lệnh:";
         layoutControlItem1.TextSize = new System.Drawing.Size(93, 19);
@@ -514,8 +519,10 @@ partial class MainForm
         layoutControlItem2.AppearanceItemCaption.Options.UseForeColor = true;
         layoutControlItem2.Control = TbSrcFloor;
         layoutControlItem2.Location = new System.Drawing.Point(0, 45);
-        layoutControlItem2.MinSize = new System.Drawing.Size(56, 13);
+        layoutControlItem2.MaxSize = new System.Drawing.Size(235, 45);
+        layoutControlItem2.MinSize = new System.Drawing.Size(235, 45);
         layoutControlItem2.Name = "layoutControlItem2";
+        layoutControlItem2.Padding = new DevExpress.XtraLayout.Utils.Padding(5, 5, 5, 5);
         layoutControlItem2.Size = new System.Drawing.Size(235, 45);
         layoutControlItem2.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
         layoutControlItem2.Text = "Từ Floor:";
@@ -528,11 +535,12 @@ partial class MainForm
         layoutControlItem3.AppearanceItemCaption.Options.UseFont = true;
         layoutControlItem3.AppearanceItemCaption.Options.UseForeColor = true;
         layoutControlItem3.Control = TbSrcBlock;
-        layoutControlItem3.Location = new System.Drawing.Point(483, 45);
-        layoutControlItem3.MaxSize = new System.Drawing.Size(241, 45);
-        layoutControlItem3.MinSize = new System.Drawing.Size(241, 45);
+        layoutControlItem3.Location = new System.Drawing.Point(484, 45);
+        layoutControlItem3.MaxSize = new System.Drawing.Size(240, 45);
+        layoutControlItem3.MinSize = new System.Drawing.Size(240, 45);
         layoutControlItem3.Name = "layoutControlItem3";
-        layoutControlItem3.Size = new System.Drawing.Size(241, 45);
+        layoutControlItem3.Padding = new DevExpress.XtraLayout.Utils.Padding(5, 5, 5, 5);
+        layoutControlItem3.Size = new System.Drawing.Size(240, 45);
         layoutControlItem3.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
         layoutControlItem3.Text = "Từ Block:";
         layoutControlItem3.TextSize = new System.Drawing.Size(93, 19);
@@ -545,9 +553,11 @@ partial class MainForm
         layoutControlItem4.AppearanceItemCaption.Options.UseForeColor = true;
         layoutControlItem4.Control = TbSrcRail;
         layoutControlItem4.Location = new System.Drawing.Point(235, 45);
-        layoutControlItem4.MinSize = new System.Drawing.Size(56, 13);
+        layoutControlItem4.MaxSize = new System.Drawing.Size(249, 45);
+        layoutControlItem4.MinSize = new System.Drawing.Size(249, 45);
         layoutControlItem4.Name = "layoutControlItem4";
-        layoutControlItem4.Size = new System.Drawing.Size(248, 45);
+        layoutControlItem4.Padding = new DevExpress.XtraLayout.Utils.Padding(5, 5, 5, 5);
+        layoutControlItem4.Size = new System.Drawing.Size(249, 45);
         layoutControlItem4.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
         layoutControlItem4.Text = "Từ Rail:";
         layoutControlItem4.TextSize = new System.Drawing.Size(93, 19);
@@ -560,8 +570,10 @@ partial class MainForm
         layoutControlItem5.AppearanceItemCaption.Options.UseForeColor = true;
         layoutControlItem5.Control = TbTargetFloor;
         layoutControlItem5.Location = new System.Drawing.Point(0, 90);
-        layoutControlItem5.MinSize = new System.Drawing.Size(56, 13);
+        layoutControlItem5.MaxSize = new System.Drawing.Size(235, 45);
+        layoutControlItem5.MinSize = new System.Drawing.Size(235, 45);
         layoutControlItem5.Name = "layoutControlItem5";
+        layoutControlItem5.Padding = new DevExpress.XtraLayout.Utils.Padding(5, 5, 5, 5);
         layoutControlItem5.Size = new System.Drawing.Size(235, 45);
         layoutControlItem5.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
         layoutControlItem5.Text = "Đến Floor:";
@@ -575,9 +587,11 @@ partial class MainForm
         layoutControlItem6.AppearanceItemCaption.Options.UseForeColor = true;
         layoutControlItem6.Control = TbTargetRail;
         layoutControlItem6.Location = new System.Drawing.Point(235, 90);
-        layoutControlItem6.MinSize = new System.Drawing.Size(56, 13);
+        layoutControlItem6.MaxSize = new System.Drawing.Size(249, 45);
+        layoutControlItem6.MinSize = new System.Drawing.Size(249, 45);
         layoutControlItem6.Name = "layoutControlItem6";
-        layoutControlItem6.Size = new System.Drawing.Size(248, 45);
+        layoutControlItem6.Padding = new DevExpress.XtraLayout.Utils.Padding(5, 5, 5, 5);
+        layoutControlItem6.Size = new System.Drawing.Size(249, 45);
         layoutControlItem6.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
         layoutControlItem6.Text = "Đến Rail:";
         layoutControlItem6.TextSize = new System.Drawing.Size(93, 19);
@@ -589,11 +603,12 @@ partial class MainForm
         layoutControlItem7.AppearanceItemCaption.Options.UseFont = true;
         layoutControlItem7.AppearanceItemCaption.Options.UseForeColor = true;
         layoutControlItem7.Control = TbTargetBlock;
-        layoutControlItem7.Location = new System.Drawing.Point(483, 90);
-        layoutControlItem7.MaxSize = new System.Drawing.Size(241, 45);
-        layoutControlItem7.MinSize = new System.Drawing.Size(241, 45);
+        layoutControlItem7.Location = new System.Drawing.Point(484, 90);
+        layoutControlItem7.MaxSize = new System.Drawing.Size(240, 45);
+        layoutControlItem7.MinSize = new System.Drawing.Size(240, 45);
         layoutControlItem7.Name = "layoutControlItem7";
-        layoutControlItem7.Size = new System.Drawing.Size(241, 45);
+        layoutControlItem7.Padding = new DevExpress.XtraLayout.Utils.Padding(5, 5, 5, 5);
+        layoutControlItem7.Size = new System.Drawing.Size(240, 45);
         layoutControlItem7.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
         layoutControlItem7.Text = "Đến Block:";
         layoutControlItem7.TextSize = new System.Drawing.Size(93, 19);
@@ -606,9 +621,11 @@ partial class MainForm
         layoutControlItem9.AppearanceItemCaption.Options.UseForeColor = true;
         layoutControlItem9.Control = ToggleInDir;
         layoutControlItem9.Location = new System.Drawing.Point(235, 135);
-        layoutControlItem9.MinSize = new System.Drawing.Size(196, 23);
+        layoutControlItem9.MaxSize = new System.Drawing.Size(249, 45);
+        layoutControlItem9.MinSize = new System.Drawing.Size(249, 45);
         layoutControlItem9.Name = "layoutControlItem9";
-        layoutControlItem9.Size = new System.Drawing.Size(248, 45);
+        layoutControlItem9.Padding = new DevExpress.XtraLayout.Utils.Padding(5, 5, 5, 5);
+        layoutControlItem9.Size = new System.Drawing.Size(249, 45);
         layoutControlItem9.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
         layoutControlItem9.Text = "Hướng vào:";
         layoutControlItem9.TextSize = new System.Drawing.Size(93, 19);
@@ -620,11 +637,12 @@ partial class MainForm
         layoutControlItem10.AppearanceItemCaption.Options.UseFont = true;
         layoutControlItem10.AppearanceItemCaption.Options.UseForeColor = true;
         layoutControlItem10.Control = ToggleOutDir;
-        layoutControlItem10.Location = new System.Drawing.Point(483, 135);
-        layoutControlItem10.MaxSize = new System.Drawing.Size(241, 45);
-        layoutControlItem10.MinSize = new System.Drawing.Size(241, 45);
+        layoutControlItem10.Location = new System.Drawing.Point(484, 135);
+        layoutControlItem10.MaxSize = new System.Drawing.Size(240, 45);
+        layoutControlItem10.MinSize = new System.Drawing.Size(240, 45);
         layoutControlItem10.Name = "layoutControlItem10";
-        layoutControlItem10.Size = new System.Drawing.Size(241, 45);
+        layoutControlItem10.Padding = new DevExpress.XtraLayout.Utils.Padding(5, 5, 5, 5);
+        layoutControlItem10.Size = new System.Drawing.Size(240, 45);
         layoutControlItem10.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
         layoutControlItem10.Text = "Hướng ra:";
         layoutControlItem10.TextSize = new System.Drawing.Size(93, 19);
@@ -636,11 +654,12 @@ partial class MainForm
         layoutControlItem8.AppearanceItemCaption.Options.UseFont = true;
         layoutControlItem8.AppearanceItemCaption.Options.UseForeColor = true;
         layoutControlItem8.Control = TbGateNumber;
-        layoutControlItem8.Location = new System.Drawing.Point(483, 0);
-        layoutControlItem8.MaxSize = new System.Drawing.Size(241, 45);
-        layoutControlItem8.MinSize = new System.Drawing.Size(241, 45);
+        layoutControlItem8.Location = new System.Drawing.Point(484, 0);
+        layoutControlItem8.MaxSize = new System.Drawing.Size(240, 45);
+        layoutControlItem8.MinSize = new System.Drawing.Size(240, 45);
         layoutControlItem8.Name = "layoutControlItem8";
-        layoutControlItem8.Size = new System.Drawing.Size(241, 45);
+        layoutControlItem8.Padding = new DevExpress.XtraLayout.Utils.Padding(5, 5, 5, 5);
+        layoutControlItem8.Size = new System.Drawing.Size(240, 45);
         layoutControlItem8.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
         layoutControlItem8.Text = "Cửa:";
         layoutControlItem8.TextSize = new System.Drawing.Size(93, 19);
@@ -649,7 +668,8 @@ partial class MainForm
         // 
         emptySpaceItem1.AllowHotTrack = false;
         emptySpaceItem1.Location = new System.Drawing.Point(0, 180);
-        emptySpaceItem1.MinSize = new System.Drawing.Size(104, 24);
+        emptySpaceItem1.MaxSize = new System.Drawing.Size(344, 55);
+        emptySpaceItem1.MinSize = new System.Drawing.Size(344, 55);
         emptySpaceItem1.Name = "emptySpaceItem1";
         emptySpaceItem1.Size = new System.Drawing.Size(344, 55);
         emptySpaceItem1.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
@@ -663,8 +683,10 @@ partial class MainForm
         layoutControlItem13.AppearanceItemCaption.Options.UseForeColor = true;
         layoutControlItem13.Control = TbBarcode;
         layoutControlItem13.Location = new System.Drawing.Point(0, 135);
-        layoutControlItem13.MinSize = new System.Drawing.Size(50, 25);
+        layoutControlItem13.MaxSize = new System.Drawing.Size(235, 45);
+        layoutControlItem13.MinSize = new System.Drawing.Size(235, 45);
         layoutControlItem13.Name = "layoutControlItem13";
+        layoutControlItem13.Padding = new DevExpress.XtraLayout.Utils.Padding(5, 5, 5, 5);
         layoutControlItem13.Size = new System.Drawing.Size(235, 45);
         layoutControlItem13.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
         layoutControlItem13.Text = "Barcode:";
@@ -674,9 +696,10 @@ partial class MainForm
         // 
         layoutControlItem12.Control = BtRefresh;
         layoutControlItem12.Location = new System.Drawing.Point(533, 180);
-        layoutControlItem12.MinSize = new System.Drawing.Size(36, 12);
+        layoutControlItem12.MaxSize = new System.Drawing.Size(191, 55);
+        layoutControlItem12.MinSize = new System.Drawing.Size(191, 55);
         layoutControlItem12.Name = "layoutControlItem12";
-        layoutControlItem12.Padding = new DevExpress.XtraLayout.Utils.Padding(5, 5, 5, 5);
+        layoutControlItem12.Padding = new DevExpress.XtraLayout.Utils.Padding(4, 4, 4, 4);
         layoutControlItem12.Size = new System.Drawing.Size(191, 55);
         layoutControlItem12.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
         layoutControlItem12.TextSize = new System.Drawing.Size(0, 0);
@@ -686,9 +709,10 @@ partial class MainForm
         // 
         layoutControlItem11.Control = BtAddCommand;
         layoutControlItem11.Location = new System.Drawing.Point(344, 180);
-        layoutControlItem11.MinSize = new System.Drawing.Size(40, 12);
+        layoutControlItem11.MaxSize = new System.Drawing.Size(189, 55);
+        layoutControlItem11.MinSize = new System.Drawing.Size(189, 55);
         layoutControlItem11.Name = "layoutControlItem11";
-        layoutControlItem11.Padding = new DevExpress.XtraLayout.Utils.Padding(5, 5, 5, 5);
+        layoutControlItem11.Padding = new DevExpress.XtraLayout.Utils.Padding(4, 4, 4, 4);
         layoutControlItem11.Size = new System.Drawing.Size(189, 55);
         layoutControlItem11.SizeConstraintsType = DevExpress.XtraLayout.SizeConstraintsType.Custom;
         layoutControlItem11.Text = "The";
@@ -697,7 +721,7 @@ partial class MainForm
         // 
         // checkEditStatus
         // 
-        checkEditStatus.Location = new System.Drawing.Point(18, 45);
+        checkEditStatus.Location = new System.Drawing.Point(19, 44);
         checkEditStatus.Name = "checkEditStatus";
         checkEditStatus.Properties.Caption = "Trạng thái...";
         checkEditStatus.Size = new System.Drawing.Size(133, 22);
@@ -711,7 +735,7 @@ partial class MainForm
         BtnConnect.Appearance.Options.UseBackColor = true;
         BtnConnect.Appearance.Options.UseFont = true;
         BtnConnect.Appearance.Options.UseForeColor = true;
-        BtnConnect.Location = new System.Drawing.Point(18, 78);
+        BtnConnect.Location = new System.Drawing.Point(19, 78);
         BtnConnect.Name = "BtnConnect";
         BtnConnect.Size = new System.Drawing.Size(145, 42);
         BtnConnect.TabIndex = 1;
@@ -786,7 +810,7 @@ partial class MainForm
         labelControl3.Appearance.ForeColor = System.Drawing.Color.Blue;
         labelControl3.Appearance.Options.UseFont = true;
         labelControl3.Appearance.Options.UseForeColor = true;
-        labelControl3.Location = new System.Drawing.Point(244, 45);
+        labelControl3.Location = new System.Drawing.Point(244, 44);
         labelControl3.Name = "labelControl3";
         labelControl3.Size = new System.Drawing.Size(59, 23);
         labelControl3.TabIndex = 9;
@@ -826,7 +850,7 @@ partial class MainForm
         // TbCountQueue
         // 
         TbCountQueue.EditValue = new decimal(new int[] { 0, 0, 0, 0 });
-        TbCountQueue.Location = new System.Drawing.Point(84, 88);
+        TbCountQueue.Location = new System.Drawing.Point(84, 89);
         TbCountQueue.Name = "TbCountQueue";
         TbCountQueue.Properties.Appearance.Font = new System.Drawing.Font("Tahoma", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
         TbCountQueue.Properties.Appearance.ForeColor = System.Drawing.Color.Red;
@@ -848,7 +872,7 @@ partial class MainForm
         labelControl2.Appearance.ForeColor = System.Drawing.Color.Blue;
         labelControl2.Appearance.Options.UseFont = true;
         labelControl2.Appearance.Options.UseForeColor = true;
-        labelControl2.Location = new System.Drawing.Point(133, 45);
+        labelControl2.Location = new System.Drawing.Point(133, 44);
         labelControl2.Name = "labelControl2";
         labelControl2.Size = new System.Drawing.Size(44, 23);
         labelControl2.TabIndex = 8;
@@ -879,7 +903,7 @@ partial class MainForm
         labelControl1.Appearance.ForeColor = System.Drawing.Color.Blue;
         labelControl1.Appearance.Options.UseFont = true;
         labelControl1.Appearance.Options.UseForeColor = true;
-        labelControl1.Location = new System.Drawing.Point(12, 45);
+        labelControl1.Location = new System.Drawing.Point(12, 44);
         labelControl1.Name = "labelControl1";
         labelControl1.Size = new System.Drawing.Size(56, 23);
         labelControl1.TabIndex = 7;
@@ -982,27 +1006,12 @@ partial class MainForm
         BtPause.Appearance.Options.UseBackColor = true;
         BtPause.Appearance.Options.UseFont = true;
         BtPause.Appearance.Options.UseForeColor = true;
-        BtPause.Location = new System.Drawing.Point(914, 300);
+        BtPause.Location = new System.Drawing.Point(915, 300);
         BtPause.Name = "BtPause";
         BtPause.Size = new System.Drawing.Size(145, 42);
         BtPause.TabIndex = 10;
         BtPause.Text = "Dừng";
         BtPause.Click += BtPause_Click;
-        // 
-        // BtResume
-        // 
-        BtResume.Appearance.BackColor = System.Drawing.Color.FromArgb(192, 255, 255);
-        BtResume.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Bold);
-        BtResume.Appearance.ForeColor = System.Drawing.Color.Black;
-        BtResume.Appearance.Options.UseBackColor = true;
-        BtResume.Appearance.Options.UseFont = true;
-        BtResume.Appearance.Options.UseForeColor = true;
-        BtResume.Location = new System.Drawing.Point(1065, 300);
-        BtResume.Name = "BtResume";
-        BtResume.Size = new System.Drawing.Size(145, 42);
-        BtResume.TabIndex = 11;
-        BtResume.Text = "Tiếp tục";
-        BtResume.Click += BtResume_Click;
         // 
         // TbTaskId
         // 
@@ -1031,15 +1040,30 @@ partial class MainForm
         labelControl4.TabIndex = 13;
         labelControl4.Text = "Đang thực hiện:";
         // 
+        // BtReset
+        // 
+        BtReset.Appearance.BackColor = System.Drawing.Color.FromArgb(192, 255, 255);
+        BtReset.Appearance.Font = new System.Drawing.Font("Tahoma", 11.25F, System.Drawing.FontStyle.Bold);
+        BtReset.Appearance.ForeColor = System.Drawing.Color.Black;
+        BtReset.Appearance.Options.UseBackColor = true;
+        BtReset.Appearance.Options.UseFont = true;
+        BtReset.Appearance.Options.UseForeColor = true;
+        BtReset.Location = new System.Drawing.Point(1066, 300);
+        BtReset.Name = "BtReset";
+        BtReset.Size = new System.Drawing.Size(145, 42);
+        BtReset.TabIndex = 14;
+        BtReset.Text = "Reset";
+        BtReset.Click += BtReset_Click;
+        // 
         // MainForm
         // 
         Appearance.Options.UseFont = true;
         AutoScaleDimensions = new System.Drawing.SizeF(8F, 18F);
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
         ClientSize = new System.Drawing.Size(1800, 970);
+        Controls.Add(BtReset);
         Controls.Add(labelControl4);
         Controls.Add(TbTaskId);
-        Controls.Add(BtResume);
         Controls.Add(BtPause);
         Controls.Add(BtExecute);
         Controls.Add(BtnDeleteAll);
@@ -1163,10 +1187,10 @@ partial class MainForm
     private DevExpress.XtraLayout.LayoutControlItem layoutControlItem13;
     private DevExpress.XtraEditors.SpinEdit TbBarcode;
     private DevExpress.XtraEditors.SimpleButton BtPause;
-    private DevExpress.XtraEditors.SimpleButton BtResume;
     private DevExpress.XtraEditors.LabelControl labelControl6;
     private DevExpress.XtraEditors.SpinEdit TbCountQueue;
     private DevExpress.XtraEditors.CheckEdit CbIsResume;
     private DevExpress.XtraEditors.TextEdit TbTaskId;
     private DevExpress.XtraEditors.LabelControl labelControl4;
+    private DevExpress.XtraEditors.SimpleButton BtReset;
 }

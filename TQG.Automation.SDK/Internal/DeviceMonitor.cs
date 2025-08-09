@@ -12,6 +12,8 @@ internal sealed class DeviceMonitor(IReadOnlyDictionary<string, DeviceProfile> p
 
     public event EventHandler<DeviceStatusChangedEventArgs>? DeviceStatusChanged;
 
+    public IReadOnlyDictionary<string, DeviceProfile> DeviceProfile => profiles;
+
     public async Task StartMonitoring(string deviceId)
     {
         if (GetDeviceStatus(deviceId) == DeviceStatus.Busy)
@@ -61,7 +63,17 @@ internal sealed class DeviceMonitor(IReadOnlyDictionary<string, DeviceProfile> p
         }
     }
 
-    public IReadOnlyDictionary<string, DeviceProfile> DeviceProfile => profiles;
+    public bool ResetDeviceStatus(string deviceId)
+    {
+        var status = GetDeviceStatus(deviceId);
+        if (status == DeviceStatus.Busy)
+        {
+            return false;
+        }
+
+        UpdateDeviceStatus(deviceId, DeviceStatus.Idle);
+        return true;
+    }
 
     public async Task<PlcConnector> GetConnectorAsync(string deviceId)
     {
@@ -113,6 +125,33 @@ internal sealed class DeviceMonitor(IReadOnlyDictionary<string, DeviceProfile> p
         }
 
         return idleDevices;
+    }
+
+    public async Task<Location?> GetActualLocationAsync(string deviceId)
+    {
+        try
+        {
+            var deviceStatus = GetDeviceStatus(deviceId);
+            if (deviceStatus != DeviceStatus.Idle && deviceStatus != DeviceStatus.Busy)
+            {
+                return null;
+            }
+
+            DeviceProfile profile = GetProfile(deviceId);
+            PlcConnector connector = await GetConnectorAsync(deviceId);
+            SignalMap signals = profile.Signals;
+
+            short floor = await connector.ReadAsync<short>(signals.ActualFloor);
+            short rail = await connector.ReadAsync<short>(signals.ActualRail);
+            short block = await connector.ReadAsync<short>(signals.ActualBlock);
+
+            return new Location(floor, rail, block);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+
     }
 
     public void Dispose() => deviceStatuses.Clear();

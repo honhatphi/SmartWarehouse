@@ -2,7 +2,6 @@
 using System.Threading.Channels;
 using TQG.Automation.SDK.Communication;
 using TQG.Automation.SDK.Events;
-using TQG.Automation.SDK.Exceptions;
 using TQG.Automation.SDK.Shared;
 
 namespace TQG.Automation.SDK.Internal;
@@ -27,37 +26,38 @@ internal sealed class BarcodeHandler : IDisposable
         _validationQueueTask = ProcessValidationQueueAsync(validationChannel);
     }
 
-    /// <summary>
-    /// Đọc mã vạch từ thiết bị PLC.
-    /// </summary>
-    /// <param name="connector">Kết nối đến thiết bị PLC.</param>
-    /// <param name="signals">Bản đồ tín hiệu của thiết bị.</param>
-    /// <returns>Mã vạch đọc được dưới dạng chuỗi ký tự.</returns>
     public static async Task<string> ReadBarcodeAsync(PlcConnector connector, SignalMap signals)
     {
-        var readTasks = new Task<int>[10]
+        var readTasks = new Task<string>[10]
         {
-            connector.ReadAsync<int>(signals.BarcodeChar1),
-            connector.ReadAsync<int>(signals.BarcodeChar2),
-            connector.ReadAsync<int>(signals.BarcodeChar3),
-            connector.ReadAsync<int>(signals.BarcodeChar4),
-            connector.ReadAsync<int>(signals.BarcodeChar5),
-            connector.ReadAsync<int>(signals.BarcodeChar6),
-            connector.ReadAsync<int>(signals.BarcodeChar7),
-            connector.ReadAsync<int>(signals.BarcodeChar8),
-            connector.ReadAsync<int>(signals.BarcodeChar9),
-            connector.ReadAsync<int>(signals.BarcodeChar10)
+            connector.ReadAsync<string>(signals.BarcodeChar1),
+            connector.ReadAsync<string>(signals.BarcodeChar2),
+            connector.ReadAsync<string>(signals.BarcodeChar3),
+            connector.ReadAsync<string>(signals.BarcodeChar4),
+            connector.ReadAsync<string>(signals.BarcodeChar5),
+            connector.ReadAsync<string>(signals.BarcodeChar6),
+            connector.ReadAsync<string>(signals.BarcodeChar7),
+            connector.ReadAsync<string>(signals.BarcodeChar8),
+            connector.ReadAsync<string>(signals.BarcodeChar9),
+            connector.ReadAsync<string>(signals.BarcodeChar10)
         };
 
         await Task.WhenAll(readTasks);
 
-        var chars = new int[10];
+        string result = "";
         for (int i = 0; i < 10; i++)
         {
-            chars[i] = await readTasks[i];
+            string val = await readTasks[i];
+
+            if (val.Length > 1)
+            {
+                break;
+            }
+
+            result += val;
         }
 
-        return string.Concat(chars);
+        return result;
     }
 
     public async Task SendBarcodeAsync(string deviceId, string taskId, string barcode)
@@ -69,7 +69,7 @@ internal sealed class BarcodeHandler : IDisposable
 
         try
         {
-            var actualLocation = await GetActualLocationAsync(deviceId);
+            var actualLocation = await _monitor.GetActualLocationAsync(deviceId);
 
             await _validationChannel.Writer.WriteAsync(new BarcodeRequest
             {
@@ -96,62 +96,48 @@ internal sealed class BarcodeHandler : IDisposable
         Direction direction,
         short gateNumber)
     {
-        try
+        if (!_pendingResponses.TryGetValue(taskId, out var entry))
         {
-            if (!_pendingResponses.TryGetValue(taskId, out var entry))
-            {
-                TaskFailed?.Invoke(this, new TaskFailedEventArgs(deviceId, taskId, ErrorDetail.NotFoundTask(deviceId, taskId)));
-                return;
-            }
-
-            if (entry.DeviceId != deviceId)
-            {
-                entry.Cts.Cancel();
-                _pendingResponses.TryRemove(taskId, out _);
-
-                TaskFailed?.Invoke(this, new TaskFailedEventArgs(deviceId, taskId, ErrorDetail.MismatchedDevice(taskId, entry.DeviceId, deviceId)));
-                return;
-            }
-
-            _pendingResponses.TryRemove(taskId, out _);
-
-            DeviceProfile profile = _monitor.GetProfile(deviceId);
-            PlcConnector connector = await _monitor.GetConnectorAsync(deviceId);
-            var signals = profile.Signals;
-            bool inDirBlockValue = direction != Direction.Bottom;
-
-            if (isValid && targetLocation != null)
-            {
-                await connector.WriteAsync(signals.BarcodeValid, true);
-                await connector.WriteAsync(signals.BarcodeInvalid, false);
-
-                await connector.WriteAsync(signals.TargetFloor, targetLocation.Floor);
-                await connector.WriteAsync(signals.TargetRail, targetLocation.Rail);
-                await connector.WriteAsync(signals.TargetBlock, targetLocation.Block);
-                await connector.WriteAsync(signals.InDirBlock, inDirBlockValue);
-                await connector.WriteAsync(signals.GateNumber, gateNumber);
-            }
-            else
-            {
-                await connector.WriteAsync(signals.BarcodeValid, false);
-                await connector.WriteAsync(signals.BarcodeInvalid, true);
-            }
-
-            entry.Tcs.SetResult(true);
-
-            entry.Cts.Dispose();
-        }
-        catch (DeviceNotRegisteredException)
-        {
-            TaskFailed?.Invoke(this, new TaskFailedEventArgs(deviceId, taskId, ErrorDetail.DeviceNotRegistered(deviceId)));
+            TaskFailed?.Invoke(this, new TaskFailedEventArgs(deviceId, taskId, ErrorDetail.NotFoundTask(deviceId, taskId)));
             return;
         }
-        catch (Exception)
-        {
 
-            throw;
+        if (entry.DeviceId != deviceId)
+        {
+            entry.Cts.Cancel();
+            _pendingResponses.TryRemove(taskId, out _);
+
+            TaskFailed?.Invoke(this, new TaskFailedEventArgs(deviceId, taskId, ErrorDetail.MismatchedDevice(taskId, entry.DeviceId, deviceId)));
+            return;
         }
 
+        _pendingResponses.TryRemove(taskId, out _);
+
+        DeviceProfile profile = _monitor.GetProfile(deviceId);
+        PlcConnector connector = await _monitor.GetConnectorAsync(deviceId);
+        var signals = profile.Signals;
+        bool inDirBlockValue = direction != Direction.Bottom;
+
+        if (isValid && targetLocation != null)
+        {
+            await connector.WriteAsync(signals.BarcodeValid, true);
+            await connector.WriteAsync(signals.BarcodeInvalid, false);
+
+            await connector.WriteAsync(signals.TargetFloor, targetLocation.Floor);
+            await connector.WriteAsync(signals.TargetRail, targetLocation.Rail);
+            await connector.WriteAsync(signals.TargetBlock, targetLocation.Block);
+            await connector.WriteAsync(signals.InDirBlock, inDirBlockValue);
+            await connector.WriteAsync(signals.GateNumber, gateNumber);
+        }
+        else
+        {
+            await connector.WriteAsync(signals.BarcodeValid, false);
+            await connector.WriteAsync(signals.BarcodeInvalid, true);
+        }
+
+        entry.Tcs.SetResult(true);
+
+        entry.Cts.Dispose();
     }
 
     private Task ProcessValidationQueueAsync(Channel<BarcodeRequest> validationChannel)
@@ -162,33 +148,6 @@ internal sealed class BarcodeHandler : IDisposable
                 BarcodeReceived?.Invoke(this, new BarcodeReceivedEventArgs(req.DeviceId, req.TaskId, req.Barcode));
             }
         });
-
-    public async Task<Location?> GetActualLocationAsync(string deviceId)
-    {
-        try
-        {
-            var deviceStatus = _monitor.GetDeviceStatus(deviceId);
-            if (deviceStatus != DeviceStatus.Idle && deviceStatus != DeviceStatus.Busy)
-            {
-                return null;
-            }
-
-            DeviceProfile profile = _monitor.GetProfile(deviceId);
-            PlcConnector connector = await _monitor.GetConnectorAsync(deviceId);
-            SignalMap signals = profile.Signals;
-
-            short floor = await connector.ReadAsync<short>(signals.ActualFloor);
-            short rail = await connector.ReadAsync<short>(signals.ActualRail);
-            short block = await connector.ReadAsync<short>(signals.ActualBlock);
-
-            return new Location(floor, rail, block);
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-
-    }
 
     public async void Dispose()
     {

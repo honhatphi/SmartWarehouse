@@ -16,6 +16,7 @@ public class GatewayBackgroundService : BackgroundService
     private readonly MovingTaskRepository _repository;
 
     public event EventHandler<BarcodeReceivedEventArgs>? BarcodeReceived;
+    public event EventHandler<BarcodeExecuteEventArgs>? BarcodeExecute;
     public event EventHandler<TaskSucceededEventArgs>? TaskSucceeded;
     public event EventHandler<TaskFailedEventArgs>? TaskFailed;
 
@@ -46,12 +47,11 @@ public class GatewayBackgroundService : BackgroundService
 
         await _gateway.SendValidationResult(e.DeviceId, e.TaskId, isValid, targetLocation, direction, gateNumber);
 
-
+        BarcodeExecute?.Invoke(this, new BarcodeExecuteEventArgs(e.DeviceId, e.TaskId, e.Barcode, isValid, targetLocation));
     }
 
     private void OnTaskSucceeded(object? sender, TaskSucceededEventArgs e)
     {
-
         TaskSucceeded?.Invoke(this, e);
     }
 
@@ -142,4 +142,6 @@ public class GatewayBackgroundService : BackgroundService
     public bool RemoveTransportTasks(IEnumerable<string> taskIds) => _gateway.RemoveTransportTasks(taskIds);
 
     public string? GetCurrentTask(string deviceId) => _gateway.GetCurrentTask(deviceId);
+
+    public bool ResetDeviceStatus(string deviceId) => _gateway.ResetDeviceStatus(deviceId);
 }

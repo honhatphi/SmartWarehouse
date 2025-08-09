@@ -34,14 +34,6 @@ public class MovingTaskRepository
             _tasks.Remove(task);
     }
 
-    public void DeleteByBarcode(string barcode)
-    {
-        var task = _tasks.FirstOrDefault(t => t.Barcode == barcode);
-
-        if (task != null)
-            _tasks.Remove(task);
-    }
-
     public void DeleteAllTasks()
     {
         _tasks.Clear();

@@ -109,6 +109,60 @@ internal sealed class CommandSender : IDisposable
         await _taskDispatcher.ProcessQueueIfNeeded();
     }
 
+    public async Task SendValidationResult(
+        string deviceId,
+        string taskId,
+        bool isValid,
+        Location? targetLocation,
+        Direction direction,
+        short gateNumber)
+    {
+        try
+        {
+            await _barcodeHandler.SendValidationResult(deviceId, taskId, isValid, targetLocation, direction, gateNumber);
+        }
+        catch (DeviceNotRegisteredException)
+        {
+            Pause();
+
+            TaskFailed?.Invoke(this, new TaskFailedEventArgs(deviceId, taskId, ErrorDetail.DeviceNotRegistered(deviceId)));
+
+            return;
+        }
+        catch (Exception ex)
+        {
+            Pause();
+
+            HandlePollingException(deviceId, taskId, ex, nameof(CommandType.Inbound));
+        }
+    }
+
+    public TransportTask[] GetQueuedTasks() => _taskDispatcher.GetQueuedTasks();
+
+    public bool RemoveTasks(IEnumerable<string> taskIds) => _taskDispatcher.RemoveTasks(taskIds);
+
+    public string? GetCurrentTask(string deviceId) => _taskDispatcher.GetCurrentTask(deviceId);
+
+    public void Pause() => _taskDispatcher.Pause();
+
+    public void Resume()
+    {
+        _taskDispatcher.Resume();
+    }
+
+    public bool IsPauseQueue => _taskDispatcher.IsPaused;
+
+    public void Dispose()
+    {
+        foreach (var (_, Cts) in activePollTasks.Values)
+        {
+            Cts.Cancel();
+            Cts.Dispose();
+        }
+
+        activePollTasks.Clear();
+        _taskDispatcher.Dispose();
+    }
 
     private static async Task TriggerInboundCommand(PlcConnector connector, SignalMap signals)
     {
@@ -160,34 +214,27 @@ internal sealed class CommandSender : IDisposable
             {
                 if (!await timer.WaitForNextTickAsync(token)) break;
 
-                try
+
+                if (!barcodeProcessed)
                 {
-                    if (!barcodeProcessed)
+                    string barcode = await BarcodeHandler.ReadBarcodeAsync(connector, signals);
+
+                    if (string.IsNullOrEmpty(barcode) || barcode == defaultBarcode)
                     {
-                        string barcode = await BarcodeHandler.ReadBarcodeAsync(connector, signals);
-
-                        if (string.IsNullOrEmpty(barcode) || barcode == defaultBarcode)
-                        {
-                            continue;
-                        }
-
-                        await _barcodeHandler.SendBarcodeAsync(deviceId, taskId, barcode);
-                        barcodeProcessed = true;
-
-                        if (await HandleCommandStatusAsync(connector, signals, deviceId, taskId))
-                        {
-                            break;
-                        }
+                        continue;
                     }
 
-                    if (await CheckInboundCompletionAsync(connector, signals, deviceId, taskId))
+                    await _barcodeHandler.SendBarcodeAsync(deviceId, taskId, barcode);
+                    barcodeProcessed = true;
+
+                    if (await HandleCommandStatusAsync(connector, signals, deviceId, taskId))
                     {
                         break;
                     }
                 }
-                catch (Exception ex) when (!token.IsCancellationRequested)
+
+                if (await CheckInboundCompletionAsync(connector, signals, deviceId, taskId))
                 {
-                    HandlePollingException(deviceId, taskId, ex, nameof(CommandType.Inbound));
                     break;
                 }
             }
@@ -198,7 +245,8 @@ internal sealed class CommandSender : IDisposable
     private Task StartOutboundPolling(string deviceId, string taskId, PlcConnector connector, SignalMap signals, int timeoutMinutes, CancellationToken token)
         => Task.Run(async () =>
         {
-            var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+            DeviceProfile profile = _deviceMonitor.GetProfile(deviceId);
+            var timer = new PeriodicTimer(TimeSpan.FromSeconds(profile.PollingIntervalSeconds));
             var startTime = DateTime.UtcNow;
             var timeout = TimeSpan.FromMinutes(timeoutMinutes);
 
@@ -206,21 +254,13 @@ internal sealed class CommandSender : IDisposable
             {
                 if (!await timer.WaitForNextTickAsync(token)) break;
 
-                try
+                if (await HandleCommandStatusAsync(connector, signals, deviceId, taskId))
                 {
-                    if (await HandleCommandStatusAsync(connector, signals, deviceId, taskId))
-                    {
-                        break;
-                    }
-
-                    if (await CheckOutboundCompletionAsync(connector, signals, deviceId, taskId))
-                    {
-                        break;
-                    }
+                    break;
                 }
-                catch (Exception ex) when (!token.IsCancellationRequested)
+
+                if (await CheckOutboundCompletionAsync(connector, signals, deviceId, taskId))
                 {
-                    HandlePollingException(deviceId, taskId, ex, nameof(CommandType.Outbound));
                     break;
                 }
             }
@@ -231,7 +271,8 @@ internal sealed class CommandSender : IDisposable
     private Task StartTransferPolling(string deviceId, string taskId, PlcConnector connector, SignalMap signals, int timeoutMinutes, CancellationToken token)
         => Task.Run(async () =>
         {
-            var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+            DeviceProfile profile = _deviceMonitor.GetProfile(deviceId);
+            var timer = new PeriodicTimer(TimeSpan.FromSeconds(profile.PollingIntervalSeconds));
             var startTime = DateTime.UtcNow;
             var timeout = TimeSpan.FromMinutes(timeoutMinutes);
 
@@ -239,21 +280,13 @@ internal sealed class CommandSender : IDisposable
             {
                 if (!await timer.WaitForNextTickAsync(token)) break;
 
-                try
+                if (await HandleCommandStatusAsync(connector, signals, deviceId, taskId))
                 {
-                    if (await HandleCommandStatusAsync(connector, signals, deviceId, taskId))
-                    {
-                        break;
-                    }
-
-                    if (await CheckTransferCompletionAsync(connector, signals, deviceId, taskId))
-                    {
-                        break;
-                    }
+                    break;
                 }
-                catch (Exception ex) when (!token.IsCancellationRequested)
+
+                if (await CheckTransferCompletionAsync(connector, signals, deviceId, taskId))
                 {
-                    HandlePollingException(deviceId, taskId, ex, nameof(CommandType.Transfer));
                     break;
                 }
             }
@@ -273,6 +306,8 @@ internal sealed class CommandSender : IDisposable
             TaskFailed?.Invoke(this, new TaskFailedEventArgs(deviceId, taskId, ErrorDetail.CommandReject(errorCode)));
 
             _deviceMonitor.UpdateDeviceStatus(deviceId, DeviceStatus.Error);
+
+            Pause();
 
             return true;
         }
@@ -307,11 +342,18 @@ internal sealed class CommandSender : IDisposable
             {
                 TaskSucceeded?.Invoke(this, new TaskSucceededEventArgs(deviceId, taskId));
                 _deviceMonitor.UpdateDeviceStatus(deviceId, DeviceStatus.Idle);
+
+                if (GetQueuedTasks().Length == 0)
+                {
+                    Pause();
+                }
+
                 await Task.Delay(5000);
             }
             else
             {
                 TaskFailed?.Invoke(this, new TaskFailedEventArgs(deviceId, taskId, ErrorDetail.RunningFailure(taskId, deviceId, errorCode)));
+                Pause();
                 _deviceMonitor.UpdateDeviceStatus(deviceId, DeviceStatus.Error);
             }
 
@@ -339,30 +381,6 @@ internal sealed class CommandSender : IDisposable
         ArgumentNullException.ThrowIfNull(targetLocation);
     }
 
-    public void Dispose()
-    {
-        foreach (var (_, Cts) in activePollTasks.Values)
-        {
-            Cts.Cancel();
-            Cts.Dispose();
-        }
-
-        activePollTasks.Clear();
-        _taskDispatcher.Dispose();
-    }
-
-    public TransportTask[] GetQueuedTasks() => _taskDispatcher.GetQueuedTasks();
-
-    public bool RemoveTasks(IEnumerable<string> taskIds) => _taskDispatcher.RemoveTasks(taskIds);
-
-    public string? GetCurrentTask(string deviceId) => _taskDispatcher.GetCurrentTask(deviceId);
-
-    public void Pause() => _taskDispatcher.Pause();
-
-    public void Resume() => _taskDispatcher.Resume();
-
-    public bool IsPauseQueue => _taskDispatcher.IsPaused;
-
     private class TaskDispatcher : IDisposable
     {
         private readonly IReadOnlyDictionary<string, DeviceProfile> _deviceProfile;
@@ -372,13 +390,44 @@ internal sealed class CommandSender : IDisposable
         private readonly ConcurrentDictionary<string, string> _assigningDevices = new();
         private readonly Task _processingTask;
         private readonly CancellationTokenSource _cts = new();
-        private static readonly Location _gateLocation = new(1, 14, 5);  // Fixed gate location for Inbound tasks
-        private volatile bool _isPaused = false;
+        private static readonly Location _gateLocation = new(1, 14, 5);
+        private volatile bool _isPaused = true;
         private volatile int _roundRobinIndex = 0;
+        private int _isResuming = 0;
+
+        public TaskDispatcher(
+            IReadOnlyDictionary<string, DeviceProfile> deviceConfigs,
+            CommandSender sender)
+        {
+            _deviceProfile = deviceConfigs;
+            _sender = sender;
+            _processingTask = ProcessQueueAsync(_cts.Token);
+        }
 
         public void Pause()
         {
-            _isPaused = true;
+            if (Interlocked.CompareExchange(ref _isResuming, 1, 0) == 0)
+            {
+                try
+                {
+                    if (_isPaused)
+                    {
+                        return;
+                    }
+
+                    _isPaused = true;
+
+                    // Kích hoạt xử lý hàng đợi ngay sau khi tiếp tục nếu có lệnh di chuyển đang chờ
+                    if (!_taskQueue.IsEmpty)
+                    {
+                        Task.Run(ProcessQueueIfNeeded);
+                    }
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _isResuming, 0);
+                }
+            }
         }
 
         public void Resume()
@@ -392,13 +441,69 @@ internal sealed class CommandSender : IDisposable
 
         public bool IsPaused => _isPaused;
 
-        public TaskDispatcher(
-            IReadOnlyDictionary<string, DeviceProfile> deviceConfigs,
-            CommandSender sender)
+        public void OnDeviceStatusChanged(object? senderArg, DeviceStatusChangedEventArgs args)
         {
-            _deviceProfile = deviceConfigs;
-            _sender = sender;
-            _processingTask = ProcessQueueAsync(_cts.Token);
+            if (args.NewStatus == DeviceStatus.Idle && !_taskQueue.IsEmpty && !_isPaused)
+            {
+                Task.Run(ProcessQueueIfNeeded);
+            }
+        }
+
+        public TransportTask[] GetQueuedTasks() => [.. _taskQueue];
+
+        public bool RemoveTasks(IEnumerable<string> taskIds)
+        {
+            if (!IsPaused || !taskIds.Any())
+            {
+                return false;
+            }
+
+            var temp = new List<TransportTask>();
+            var removedCount = 0;
+            var taskIdSet = new HashSet<string>(taskIds);
+
+            while (_taskQueue.TryDequeue(out TransportTask? task))
+            {
+                if (taskIdSet.Contains(task.TaskId))
+                {
+                    removedCount++;
+                }
+                else
+                {
+                    temp.Add(task);
+                }
+            }
+
+            if (temp.Count > 0)
+            {
+                foreach (var task in temp)
+                {
+                    _taskQueue.Enqueue(task);
+                }
+            }
+            else
+            {
+                Pause();
+            }
+
+            return removedCount > 0;
+        }
+
+        public string? GetCurrentTask(string deviceId)
+        {
+            _assigningDevices.TryGetValue(deviceId, out string? value);
+
+            return value;
+        }
+
+        public async void Dispose()
+        {
+            await _processingTask;
+            _assigningDevices.Clear();
+            _roundRobinIndex = 0;
+            _isPaused = false;
+            _cts.Cancel();
+            _cts.Dispose();
         }
 
         public void EnqueueTasks(List<TransportTask> tasks)
@@ -435,20 +540,20 @@ internal sealed class CommandSender : IDisposable
             while (!token.IsCancellationRequested)
             {
                 await Task.Delay(200, token);
-                if (!_taskQueue.IsEmpty && !_isPaused)
-                {
-                    await AssignTasksToIdleDevicesAsync();
-                }
+
+                if (_taskQueue.IsEmpty || _isPaused) continue;
+
+                await AssignTasksToIdleDevicesAsync();
             }
         }
 
         private async Task AssignTasksToIdleDevicesAsync()
         {
-            if (_taskQueue.IsEmpty) return;
+            if (_taskQueue.IsEmpty || _isPaused) return;
 
             var idleDevices = await _sender._deviceMonitor.GetIdleDevicesAsync();
 
-            while (!_taskQueue.IsEmpty)
+            while (!_taskQueue.IsEmpty && !_isPaused)
             {
                 if (_taskQueue.TryPeek(out TransportTask? task))
                 {
@@ -533,19 +638,23 @@ internal sealed class CommandSender : IDisposable
             }
             catch (DeviceNotRegisteredException)
             {
-                _sender.TaskFailed?.Invoke(this, new TaskFailedEventArgs(deviceId, task.TaskId, ErrorDetail.DeviceNotRegistered(deviceId)));
+                Pause();
 
-                _sender.Pause();
+                _sender.TaskFailed?.Invoke(this, new TaskFailedEventArgs(deviceId, task.TaskId, ErrorDetail.DeviceNotRegistered(deviceId)));
 
                 return;
             }
             catch (Exception ex)
             {
+                Pause();
+
                 _assigningDevices.TryRemove(deviceId, out _);
-                _sender.TaskFailed?.Invoke(_sender, new TaskFailedEventArgs(deviceId, task.TaskId, ErrorDetail.TransportTaskAssignmentFailure(deviceId, task.TaskId, ex)));
 
-                _sender.Pause();
+                _sender.activePollTasks.TryRemove(task.TaskId, out _);
 
+                _sender.HandlePollingException(deviceId, task.TaskId, ex, task.CommandType.ToString());
+
+                return;
             }
         }
 
@@ -573,63 +682,5 @@ internal sealed class CommandSender : IDisposable
                 CommandType.Outbound => _sender.StartOutboundPolling(deviceId, task.TaskId, connector, profile.Signals, profile.TimeoutMinutes, token),
                 _ => _sender.StartTransferPolling(deviceId, task.TaskId, connector, profile.Signals, profile.TimeoutMinutes, token)
             };
-
-        public void OnDeviceStatusChanged(object? senderArg, DeviceStatusChangedEventArgs args)
-        {
-            if (args.NewStatus == DeviceStatus.Idle && !_taskQueue.IsEmpty)
-            {
-                Task.Run(ProcessQueueIfNeeded);
-            }
-        }
-
-        public TransportTask[] GetQueuedTasks() => [.. _taskQueue];
-
-        public bool RemoveTasks(IEnumerable<string> taskIds)
-        {
-            if (IsPaused || !taskIds.Any())
-            {
-                return false;
-            }
-
-            var temp = new List<TransportTask>();
-            var removedCount = 0;
-            var taskIdSet = new HashSet<string>(taskIds);
-
-            while (_taskQueue.TryDequeue(out TransportTask? task))
-            {
-                if (taskIdSet.Contains(task.TaskId))
-                {
-                    removedCount++;
-                }
-                else
-                {
-                    temp.Add(task);
-                }
-            }
-
-            foreach (var task in temp)
-            {
-                _taskQueue.Enqueue(task);
-            }
-
-            return removedCount > 0;
-        }
-
-        public string? GetCurrentTask(string deviceId)
-        {
-            _assigningDevices.TryGetValue(deviceId, out string? value);
-
-            return value;
-        }
-
-        public async void Dispose()
-        {
-            await _processingTask;
-            _assigningDevices.Clear();
-            _roundRobinIndex = 0;
-            _isPaused = false;
-            _cts.Cancel();
-            _cts.Dispose();
-        }
     }
 }

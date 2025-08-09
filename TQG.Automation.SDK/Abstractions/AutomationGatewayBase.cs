@@ -97,6 +97,8 @@ public abstract class AutomationGatewayBase : IDisposable
     /// <returns>Trạng thái của thiết bị (DeviceStatus). Nếu không có, trả về DeviceStatus.Offline.</returns>
     public DeviceStatus GetDeviceStatus(string deviceId) => _deviceMonitor.GetDeviceStatus(deviceId);
 
+    public bool ResetDeviceStatus(string deviceId) => _deviceMonitor.ResetDeviceStatus(deviceId);
+
     /// <summary>
     /// Gửi lệnh nhập kho
     /// </summary>
@@ -162,7 +164,7 @@ public abstract class AutomationGatewayBase : IDisposable
         Location? targetLocation,
         Direction direction,
         short gateNumber)
-        => await _barcodeHandler.SendValidationResult(deviceId, taskId, isValid, targetLocation, direction, gateNumber);
+        => await _commandSender.SendValidationResult(deviceId, taskId, isValid, targetLocation, direction, gateNumber);
 
     /// <summary>
     /// Lấy danh sách các shuttle đang ở trạng thái rảnh cùng với vị trí hiện tại của chúng.
@@ -175,7 +177,7 @@ public abstract class AutomationGatewayBase : IDisposable
     /// </summary>
     /// <param name="deviceId">ID của shuttle cần lấy vị trí.</param>
     /// <returns>Vị trí hiện tại (Location) hoặc null nếu shuttle đang không hoạt động.</returns>
-    public async Task<Location?> GetActualLocationAsync(string deviceId) => await _barcodeHandler.GetActualLocationAsync(deviceId);
+    public async Task<Location?> GetActualLocationAsync(string deviceId) => await _deviceMonitor.GetActualLocationAsync(deviceId);
 
     /// <summary>
     /// Danh sách các lệnh đang chờ xử lý trong hàng đợi.
